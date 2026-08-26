@@ -164,6 +164,8 @@ export interface NardPlayHarness {
   pass(): void
   /** Reconfigure the opponent mid-session. Rung 1..6. */
   opponent(rung?: 1 | 2 | 3 | 4 | 5 | 6, personality?: string): void
+  /** Start a match against a ladder opponent by id. */
+  start(opponentId?: string, matchLength?: number): void
   /** True while the opponent is deciding or mid-turn. */
   thinking(): boolean
   /** Skip the opponent's deliberate pacing. Automated tests only. */

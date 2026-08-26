@@ -9,6 +9,8 @@ import { SCENES, sceneById, type Scene } from './dev/scenes'
 import { availableHops } from './game/draft'
 import { useAffordances, useGame } from './game/store'
 import type { OpponentConfig } from './game/opponent'
+import { Ladder } from './ladder/Ladder'
+import { opponentById } from './ladder/opponents'
 import { decisionMaker, reconcile, toAbsolute } from './game/view'
 import { digits, langFromUrl, STRINGS } from './i18n/strings'
 import { SOUNDS } from './sound/manifest'
@@ -27,12 +29,27 @@ export function App() {
 
   if (location.pathname.startsWith('/gallery')) return <Gallery theme={theme} />
   if (scene) return <SceneView scene={sceneById(scene)} />
-  return <PlayView />
+  return <Game />
 }
 
 /* -------------------------------------------------------------------------- */
 /*  The game                                                                   */
 /* -------------------------------------------------------------------------- */
+
+/** Ladder first — you choose who you are playing before anything else. */
+function Game() {
+  const view = useGame((s) => s.view)
+  const progress = useGame((s) => s.progress)
+  const startMatch = useGame((s) => s.startMatch)
+  const lang = langFromUrl()
+
+  useDevHarness()
+
+  if (view === 'ladder') {
+    return <Ladder lang={lang} progress={progress} onStart={startMatch} />
+  }
+  return <PlayView />
+}
 
 function PlayView() {
   const lang = langFromUrl()
@@ -69,81 +86,6 @@ function PlayView() {
     // absKey is the identity of the board; abs itself is a fresh object each render.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [absKey])
-
-  // Installed ONCE, reading live store state on every call.
-  //
-  // Closing over React's `state` here instead made every harness method report
-  // the board as it looked when the effect last ran, so a driver script saw a
-  // frozen game and played 4000 moves into a position that never changed.
-  useEffect(() => {
-    if (!import.meta.env.DEV) return
-    const live = () => {
-      const s = useGame.getState()
-      const position = s.draft.hops.length > 0 ? s.draft.position : s.state.position
-      return { s, abs: toAbsolute(position, s.state.onRoll) }
-    }
-    installPlayHarness({
-      state: () => {
-        const { s, abs } = live()
-        return {
-          phase: s.state.phase,
-          onRoll: s.state.onRoll,
-          dice: s.state.dice,
-          cube: s.state.cube,
-          score: s.state.match.score,
-          result: s.state.result,
-          drafted: s.draft.hops.map((h) => `${h.from}/${h.to}`),
-          pts: [...abs.pts],
-          off: abs.off,
-          oppOff: abs.oppOff,
-        }
-      },
-      legal: () => legalMoves(useGame.getState().state).map((m) => m.notation),
-      hops: () => {
-        const s = useGame.getState()
-        if (s.state.phase !== 'to-move') return []
-        return availableHops(legalMoves(s.state), s.draft).map(
-          (h) => [h.from, h.to] as [number, number],
-        )
-      },
-      roll: () => useGame.getState().roll(),
-      move: (from, to) => {
-        useGame.getState().select(from)
-        useGame.getState().moveTo(to)
-      },
-      undo: () => useGame.getState().undo(),
-      double: () => useGame.getState().double(),
-      take: () => useGame.getState().take(),
-      pass: () => useGame.getState().passCube(),
-      opponent: (rung, personality) =>
-        useGame.getState().setOpponent({
-          ...(rung !== undefined ? { rung } : {}),
-          ...(personality !== undefined
-            ? { personality: personality as OpponentConfig['personality'] }
-            : {}),
-        }),
-      thinking: () => useGame.getState().thinking || useGame.getState().busy,
-      fast: (on) => useGame.getState().setFast(on),
-      sound: () => sound.log.map((r) => ({ ...r })),
-      playSound: (event) => sound.play(event as Parameters<typeof sound.play>[0]),
-      soundBanks: () =>
-        Object.fromEntries(
-          Object.entries(SOUNDS).map(([k, v]) => [k, v.length]),
-        ) as Record<string, number>,
-    })
-  }, [])
-
-  // Browsers refuse to start audio without a gesture, so the first interaction
-  // unlocks it. Once, then the listener removes itself.
-  useEffect(() => {
-    const unlock = () => void sound.unlock()
-    window.addEventListener('pointerdown', unlock, { once: true })
-    window.addEventListener('keydown', unlock, { once: true })
-    return () => {
-      window.removeEventListener('pointerdown', unlock)
-      window.removeEventListener('keydown', unlock)
-    }
-  }, [])
 
   const counts = useMemo(() => {
     const c: Record<number, number> = {}
@@ -185,11 +127,18 @@ function PlayView() {
       style={{ background: 'var(--app-bg)' }}
     >
       <header className="flex items-center justify-between px-6 py-3 text-sm">
-        <span
-          className={lang === 'fa' ? 'text-base' : 'tracking-[0.3em] uppercase'}
+        <button
+          onClick={() => store.toLadder()}
+          className={`transition-opacity hover:opacity-100 ${
+            lang === 'fa' ? 'text-base' : 'tracking-[0.3em] uppercase'
+          }`}
           style={{ color: 'var(--text-dim)' }}
+          title={lang === 'fa' ? 'انتخاب حریف' : 'Choose opponent'}
         >
           {s.appName}
+        </button>
+        <span className="text-sm" style={{ color: 'var(--inlay)' }}>
+          {opponentById(store.opponentId).name[lang]}
         </span>
         <span className="flex items-center gap-4" style={{ color: 'var(--text-dim)' }}>
           {degraded && <span title={s.reducedEngineHint}>⚠ {s.reducedEngine}</span>}
@@ -388,4 +337,92 @@ function Gallery({ theme }: { theme: Theme }) {
       </div>
     </div>
   )
+}
+
+/* -------------------------------------------------------------------------- */
+/*  Dev harness                                                                */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * Mounted for the whole app, not just the board, so a script can start a match
+ * from the ladder. See docs/playtesting.md.
+ */
+function useDevHarness(): void {
+  // Installed ONCE, reading live store state on every call.
+  //
+  // Closing over React's `state` here instead made every harness method report
+  // the board as it looked when the effect last ran, so a driver script saw a
+  // frozen game and played 4000 moves into a position that never changed.
+  useEffect(() => {
+    if (!import.meta.env.DEV) return
+    const live = () => {
+      const s = useGame.getState()
+      const position = s.draft.hops.length > 0 ? s.draft.position : s.state.position
+      return { s, abs: toAbsolute(position, s.state.onRoll) }
+    }
+    installPlayHarness({
+      state: () => {
+        const { s, abs } = live()
+        return {
+          phase: s.state.phase,
+          onRoll: s.state.onRoll,
+          dice: s.state.dice,
+          cube: s.state.cube,
+          score: s.state.match.score,
+          result: s.state.result,
+          drafted: s.draft.hops.map((h) => `${h.from}/${h.to}`),
+          pts: [...abs.pts],
+          off: abs.off,
+          oppOff: abs.oppOff,
+        }
+      },
+      legal: () => legalMoves(useGame.getState().state).map((m) => m.notation),
+      hops: () => {
+        const s = useGame.getState()
+        if (s.state.phase !== 'to-move') return []
+        return availableHops(legalMoves(s.state), s.draft).map(
+          (h) => [h.from, h.to] as [number, number],
+        )
+      },
+      roll: () => useGame.getState().roll(),
+      move: (from, to) => {
+        useGame.getState().select(from)
+        useGame.getState().moveTo(to)
+      },
+      undo: () => useGame.getState().undo(),
+      double: () => useGame.getState().double(),
+      take: () => useGame.getState().take(),
+      pass: () => useGame.getState().passCube(),
+      opponent: (rung, personality) =>
+        useGame.getState().setOpponent({
+          ...(rung !== undefined ? { rung } : {}),
+          ...(personality !== undefined
+            ? { personality: personality as OpponentConfig['personality'] }
+            : {}),
+        }),
+      thinking: () => useGame.getState().thinking || useGame.getState().busy,
+      fast: (on) => useGame.getState().setFast(on),
+      start: (opponentId = 'mehrdad', matchLength = 7) =>
+        useGame.getState().startMatch(opponentById(opponentId), matchLength),
+      sound: () => sound.log.map((r) => ({ ...r })),
+      playSound: (event) => sound.play(event as Parameters<typeof sound.play>[0]),
+      soundBanks: () =>
+        Object.fromEntries(
+          Object.entries(SOUNDS).map(([k, v]) => [k, v.length]),
+        ) as Record<string, number>,
+    })
+  }, [])
+
+  // Browsers refuse to start audio without a gesture, so the first interaction
+  // unlocks it. Once, then the listener removes itself.
+  useEffect(() => {
+    const unlock = () => void sound.unlock()
+    window.addEventListener('pointerdown', unlock, { once: true })
+    window.addEventListener('keydown', unlock, { once: true })
+    return () => {
+      window.removeEventListener('pointerdown', unlock)
+      window.removeEventListener('keydown', unlock)
+    }
+  }, [])
+
 }

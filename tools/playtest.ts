@@ -29,6 +29,8 @@ await page.waitForFunction(() => '__nard' in globalThis)
 // Automated runs skip the opponent's deliberate pauses; those exist so a person
 // can follow the move, and they turn a two-minute game into a twenty-minute one.
 await page.evaluate('__nard.fast(true)')
+// The app opens on the ladder now; pick an opponent to get a board.
+await page.evaluate("__nard.start('mehrdad', 1)")
 
 for (let g = 1; g <= games; g++) {
   const result = await page.evaluate<{
