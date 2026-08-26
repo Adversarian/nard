@@ -4,6 +4,7 @@ export interface RankMovesRequest {
   readonly positionId: string
   readonly dice: Dice
   readonly plies: 0 | 1 | 2
+  readonly matchId?: string
 }
 
 export interface BridgeRankedMove {
@@ -21,7 +22,14 @@ export interface RankMovesResponse {
 export interface CubeDecisionRequest {
   readonly positionId: string
   readonly cubeValue: number
-  readonly cubeOwned: boolean
+  /** -1 centred, otherwise the GNU board side that owns it. */
+  readonly cubeOwner: -1 | 0 | 1
+  readonly matchLength: number
+  /** GNU side 0 (opponent), side 1 (player represented by the position). */
+  readonly score: readonly [number, number]
+  readonly crawford: boolean
+  readonly jacoby: boolean
+  readonly plies: 0 | 1 | 2
 }
 
 export interface CubeDecisionResponse {

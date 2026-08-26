@@ -50,8 +50,13 @@ def rank_moves(params):
     first, second = params["dice"]
     plies = params["plies"]
 
-    gnubg.command("set evaluation chequerplay eval plies %d" % plies)
+    if "matchId" not in params:
+        gnubg.command("new match 0")
+        gnubg.command("set jacoby off")
     gnubg.command("set board " + position_id)
+    if "matchId" in params:
+        gnubg.command("set matchid " + params["matchId"])
+    gnubg.command("set evaluation chequerplay eval plies %d" % plies)
     gnubg.command("set dice %d %d" % (first, second))
 
     result = gnubg.hint(MAX_MOVES)
@@ -77,24 +82,22 @@ def rank_moves(params):
 def cube_decision(params):
     position_id = params["positionId"]
     cube_value = params["cubeValue"]
-    cube_owned = params["cubeOwned"]
 
     board = gnubg.positionfromid(position_id)
-    cube_owner = 1 if cube_owned else -1
     cube_info = gnubg.cubeinfo(
         cube_value,
-        cube_owner,
+        params["cubeOwner"],
         1,
-        0,
-        (0, 0),
-        0,
+        params["matchLength"],
+        tuple(params["score"]),
+        int(params["crawford"]),
         0,
     )
-    cube_info["jacoby"] = 0
+    cube_info["jacoby"] = int(params["jacoby"])
     cube_info = gnubg.calcgammonprice(cube_info)
     context = {
         "cubeful": 1,
-        "plies": 2,
+        "plies": params["plies"],
         "deterministic": 1,
         "noise": 0.0,
         "prune": 1,
@@ -102,7 +105,7 @@ def cube_decision(params):
     evaluation = gnubg.cfevaluate(board, cube_info, context)
     recommendation = evaluation[5]
 
-    if recommendation.startswith(("No double", "No redouble")):
+    if recommendation.startswith(("No double", "No redouble", "Never double")):
         action = "no-double"
     elif recommendation.startswith("Too good"):
         action = "too-good"
@@ -111,7 +114,7 @@ def cube_decision(params):
     else:
         raise RuntimeError("unknown gnubg cube recommendation: " + recommendation)
 
-    response = "pass" if recommendation.endswith("pass") else "take"
+    response = "pass" if ", pass" in recommendation.lower() else "take"
     return {
         "action": action,
         "response": response,

@@ -1,5 +1,6 @@
 import {
   applyMove,
+  encodeMatchId,
   encodePositionId,
   generateLegalMoves,
   type CubeState,
@@ -15,6 +16,7 @@ import {
 import type {
   CubeAnalysis,
   EvalOpts,
+  EvaluationContext,
   Evaluator,
   Probs,
   RankedMove,
@@ -103,6 +105,45 @@ function asError(error: unknown): Error {
   return error instanceof Error ? error : new Error(String(error))
 }
 
+function evaluationMatchId(
+  dice: Dice,
+  context: EvaluationContext | undefined,
+): string | undefined {
+  if (context === undefined) return undefined
+  return encodeMatchId({
+    dice,
+    onRoll: context.onRoll,
+    decisionPlayer: context.onRoll,
+    resignation: 0,
+    cubeOffered: false,
+    cube: context.cube,
+    crawford: context.match.crawford,
+    matchLength: context.match.length,
+    score: context.match.score,
+    jacoby: context.match.jacoby,
+    gameState: 'playing',
+  })
+}
+
+function playerScore(
+  context: EvaluationContext,
+): readonly [number, number] {
+  const opponent = context.onRoll === 'light' ? 'dark' : 'light'
+  return [
+    context.match.score[opponent],
+    context.match.score[context.onRoll],
+  ]
+}
+
+function cubeOwner(
+  cube: CubeState,
+  context: EvaluationContext | undefined,
+): -1 | 0 | 1 {
+  if (cube.owner === null) return -1
+  if (context === undefined || cube.owner === context.onRoll) return 1
+  return 0
+}
+
 export class GnubgEvaluator implements Evaluator {
   readonly #bridge: GnubgBridgeClient
   readonly #fallback: Evaluator | null
@@ -124,10 +165,12 @@ export class GnubgEvaluator implements Evaluator {
     if (legal.length === 0) return []
 
     try {
+      const matchId = evaluationMatchId(dice, opts.context)
       const response = await this.#bridge.rankMoves({
         positionId: encodePositionId(pos),
         dice,
         plies: opts.plies ?? 2,
+        ...(matchId === undefined ? {} : { matchId }),
       })
       return mapRankedMoves(pos, dice, response)
     } catch (error) {
@@ -138,18 +181,28 @@ export class GnubgEvaluator implements Evaluator {
     }
   }
 
-  async cubeDecision(pos: Position, cube: CubeState): Promise<CubeAnalysis> {
+  async cubeDecision(
+    pos: Position,
+    cube: CubeState,
+    opts: EvalOpts = {},
+  ): Promise<CubeAnalysis> {
+    const context = opts.context
     try {
       const response = await this.#bridge.cubeDecision({
         positionId: encodePositionId(pos),
         cubeValue: cube.value,
-        cubeOwned: cube.owner !== null,
+        cubeOwner: cubeOwner(cube, context),
+        matchLength: context?.match.length ?? 0,
+        score: context === undefined ? [0, 0] : playerScore(context),
+        crawford: context?.match.crawford ?? false,
+        jacoby: context?.match.jacoby ?? false,
+        plies: opts.plies ?? 2,
       })
       return validateCube(response)
     } catch (error) {
       return this.#fallBack(
         error,
-        (fallback) => fallback.cubeDecision(pos, cube),
+        (fallback) => fallback.cubeDecision(pos, cube, opts),
       )
     }
   }
