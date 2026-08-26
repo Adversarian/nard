@@ -198,10 +198,21 @@ Skill matches exactly; **luck does not**.
 | Dark | −0.0465 | −0.328 |
 
 Light is about 7% out and Dark is out by a factor of seven, though both are
-small in absolute terms. This has not been tuned away, and it has not been
-diagnosed either. Likely candidates: how the opening roll is attributed, and
-whether the 21 distinct rolls are weighted by probability (doubles 1/36,
-non-doubles 2/36) at every step.
+small in absolute terms. This has not been tuned away.
+
+**Ruled out:** evaluation depth. Forcing gnubg's luck analysis to 2 ply, to match
+ours, produces identical figures to its default — so the two are not simply
+looking at different depths.
+
+**Most likely remaining cause**, untested: we compute the mean explicitly, by
+evaluating the best play for each of the 21 distinct rolls and weighting by
+probability. gnubg appears to take the pre-roll position's equity directly.
+Those are the same quantity in theory — a pre-roll equity *is* the expectation
+over rolls — but a neural network is not self-consistent, so its direct
+evaluation of a position will not exactly equal the average of its evaluations
+of that position's 21 successors. If so our figure is arguably the more correct
+one, and the way to confirm it is to compute both and see which our own
+evaluator's pre-roll equity agrees with.
 
 **Consequence, and it is not cosmetic.** Luck is what backs the reassurance in
 `dice-fairness.md` — "you were −0.4 in luck and outplayed him" is only worth
