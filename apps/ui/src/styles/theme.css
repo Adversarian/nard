@@ -1,0 +1,104 @@
+@import 'tailwindcss';
+
+/* ---------------------------------------------------------------------------
+   Design tokens. Binding — see docs/design-language.md.
+   Components consume these; they do not invent colour, spacing or timing.
+   --------------------------------------------------------------------------- */
+
+@theme {
+  --font-sans: 'Vazirmatn', ui-sans-serif, system-ui, sans-serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, monospace;
+
+  /* Motion — docs/design-language.md §Motion */
+  --ease-lift: cubic-bezier(0.2, 0.8, 0.3, 1);
+  --dur-lift: 110ms;
+  --dur-drop: 90ms;
+  --dur-dice: 380ms;
+  --dur-cube: 420ms;
+  --dur-reduced: 120ms;
+}
+
+/* Khatam — default theme */
+:root,
+[data-theme='khatam'] {
+  --app-bg: #100c09;
+  --app-panel: #1a1410;
+  --frame: #46331f;
+  --frame-hi: #6b5133;
+  --inlay: #c9a227;
+  --field: #17110d;
+  --point-a: #a63d2b;
+  --point-b: #2f5148;
+  --checker-light: #f0e4cc;
+  --checker-light-edge: #c2af8b;
+  --checker-dark: #1a1410;
+  --checker-dark-rim: #c9a227;
+  --checker-dark-hi: #4a3b2e;
+  --text: #efe3cd;
+  --text-dim: #a2917a;
+  --good: #7c9a62;
+  --warn: #d4952f;
+  --bad: #c7522a;
+}
+
+[data-theme='tournament'] {
+  --app-bg: #0b0d0c;
+  --app-panel: #141a17;
+  --frame: #2a2119;
+  --frame-hi: #453629;
+  --inlay: #8a7d64;
+  --field: #0f2a22;
+  --point-a: #e8e2d5;
+  --point-b: #1d1a17;
+  --checker-light: #f7f3e8;
+  --checker-light-edge: #c8c0ad;
+  --checker-dark: #131110;
+  --checker-dark-rim: #8a7d64;
+  --checker-dark-hi: #3a3530;
+  --text: #e8e2d5;
+  --text-dim: #8d8878;
+}
+
+[data-theme='kaghaz'] {
+  --app-bg: #f4efe4;
+  --app-panel: #ece5d6;
+  --frame: #c9bda4;
+  --frame-hi: #ddd0b8;
+  --inlay: #a8862c;
+  --field: #e6dcc8;
+  --point-a: #c25b3f;
+  --point-b: #5c7a6e;
+  --checker-light: #fffdf7;
+  --checker-light-edge: #d6cbb2;
+  --checker-dark: #2a241e;
+  --checker-dark-rim: #a8862c;
+  --checker-dark-hi: #58493a;
+  --text: #2a241e;
+  --text-dim: #6d6455;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--app-bg);
+  color: var(--text);
+  font-family: var(--font-sans);
+  font-variant-numeric: tabular-nums;
+  -webkit-font-smoothing: antialiased;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: var(--dur-reduced) !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: var(--dur-reduced) !important;
+    scroll-behavior: auto !important;
+  }
+}

@@ -1,0 +1,9 @@
+{
+  "name": "@nard/analysis",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": { ".": "./src/index.ts" },
+  "dependencies": { "@nard/engine": "workspace:*", "@nard/ai": "workspace:*" },
+  "scripts": { "build": "tsc -b" }
+}
