@@ -11,6 +11,8 @@ interface Evaluator {
   rankMoves(pos: Position, dice: Dice, opts?: EvalOpts): Promise<RankedMove[]>
   /** Double / take / pass, with equities for each. */
   cubeDecision(pos: Position, cube: CubeState): Promise<CubeAnalysis>
+  /** Release the backend process or other resources. */
+  dispose(): Promise<void>
 }
 
 interface RankedMove {
@@ -25,12 +27,34 @@ Backends:
 
 - **`GnubgEvaluator`** — default. Long-lived `gnubg -q -t -r -p bridge.py`
   child process, JSON over stdio. See `adr/0004`.
-- **`NetEvaluator`** — fallback. Small TD-trained net, weights shipped as a
-  binary blob, pure TS inference. Used when the sidecar is unavailable.
+- **`NetEvaluator`** — fallback. Pure TypeScript, deterministic fixed-weight
+  evaluation. The M2 weights are deliberately modest bootstrap weights, not a
+  claim of gnubg-level strength; a later TD-trained weights blob can replace
+  them without changing the interface.
 
 The bridge must be supervised: restart on crash, time out individual requests,
 and fall back to `NetEvaluator` rather than hanging the UI. A dead sidecar
 degrades the opponent; it must never freeze the game.
+
+The stdio protocol is one JSON object per line. Requests carry an integer `id`,
+a `method` (`rank_moves` or `cube_decision`) and method parameters. Responses
+echo the `id` and contain either `{ok: true, result}` or
+`{ok: false, error}`. Requests are serialised because gnubg's Python API mutates
+one global board. A failed or timed-out request is not retried invisibly: it
+falls back immediately, the child is discarded, and the following request
+starts a fresh child.
+
+For checker play, the bridge sets gnubg's move filters to keep every legal move
+at the requested ply. Mixed-depth candidate lists are not valid input to the
+difficulty sampler.
+
+GNU Backgammon 1.07.001's embedded Python `hint()` reports checker plays but
+raises for cube actions. Cube decisions therefore use the supported
+`cfevaluate()` API, whose output contains the optimal, no-double, double/take
+and double/pass equities plus the recommendation. `cubeDecision` is called only
+when the cube is centred or owned by the player represented by `pos`; absolute
+player identity is intentionally outside the perspective-relative evaluator
+boundary.
 
 ## Difficulty
 
@@ -48,23 +72,40 @@ weight(move) = exp(eqdiff(move) / τ)        // eqdiff <= 0, so weight <= 1
 `τ` makes genuinely second- and third-best moves competitive. Every move it
 plays is a move some real player would play, which is the whole point.
 
-| Rung | Plies | τ | Cube competence | Feels like |
-| --- | --- | --- | --- | --- |
-| 1 — تازه‌کار | 0 | 0.140 | ignores cube | knows the rules |
-| 2 — مبتدی | 0 | 0.090 | doubles late, takes too much | casual player |
-| 3 — باشگاهی | 1 | 0.055 | roughly right | decent club player |
-| 4 — قوی | 1 | 0.030 | good | strong club player |
-| 5 — استاد | 2 | 0.012 | very good | tournament player |
-| 6 — بی‌رحم | 2 | 0.000 | optimal | gnubg at full strength |
+| Rung | Plies | measured τ | Measured checker PR | Cube competence | Feels like |
+| --- | --- | ---: | ---: | --- | --- |
+| 1 — تازه‌کار | 0 | 0.150 | 15.46 | ignores cube | knows the rules |
+| 2 — مبتدی | 0 | 0.080 | 12.31 | doubles late, takes too much | casual player |
+| 3 — باشگاهی | 1 | 0.065 | 9.94 | roughly right | decent club player |
+| 4 — قوی | 1 | 0.040 | 6.69 | good | strong club player |
+| 5 — استاد | 2 | 0.022 | 2.81 | very good | tournament player |
+| 6 — بی‌رحم | 2 | 0.000 | 0.00 | optimal | gnubg at full strength |
 
 Cube competence is a separate axis because it is where weaker humans are
 *actually* weak. A rung-2 bot that plays checkers sloppily but doubles perfectly
 would feel wrong.
 
-Calibration is empirical, not theoretical: `pnpm selfplay` runs each rung
-against rung 6 over enough matches to estimate its PR, and the table above is
-adjusted until the rungs are evenly spaced. **The τ values above are initial
-guesses and are expected to move.**
+Calibration is empirical, not theoretical: `pnpm selfplay` plays two games for
+each rung against rung 6, alternating the challenger's colour. Every
+non-forced position enters one shared corpus. The harness evaluates that
+position once at 0, 1 and 2 ply, then computes each rung's expected equity loss
+from its sampling weights. Scoring every rung on the same positions removes
+dice and game-path noise from the comparison while the corpus itself still
+comes from the actual policies playing complete games.
+
+The table is the 2026-08-26 measurement with seed `0x4e415244`: 12 games and
+523 shared non-forced decisions. PR is relative to the same 2-ply gnubg
+reference, so rung 6 is `0.00` by construction rather than an assertion that a
+2-ply player has zero rollout PR. The initial τ values were
+`[0.140, 0.090, 0.055, 0.030, 0.012, 0.000]`; calibration changed them to
+`[0.150, 0.080, 0.065, 0.040, 0.022, 0.000]`. The measured adjacent gaps are
+`3.15`, `2.37`, `3.25`, `3.88`, and `2.81` PR.
+
+Cube errors use the same principle as checker errors: tolerate close decisions,
+do not manufacture arbitrary ones. Rung 1 never offers and always takes. For
+rungs 2–6, the tolerated equity gap is respectively `0.18`, `0.09`, `0.045`,
+`0.015`, and `0.000`. A bot delays a double while the gain is within its
+tolerance and takes while taking is within that tolerance of passing.
 
 ## Personalities
 
@@ -98,6 +139,21 @@ Feature definitions are perspective-relative and deterministic:
 | **The Racer** | + race lead, + safe distribution, − contact |
 | **The Anchor** | + advanced anchor held, + opponent blots kept in range, − prime length |
 | **The Purist** | all `θ = 0` — pure equity, no style |
+
+The exact M2 coefficients below are in equity units. They are intentionally
+small: personality breaks close calls rather than overruling play quality.
+The earlier prose descriptions mentioned contact and opponent blots in range,
+but `styleFeatures()` does not expose those as independent values. M2 therefore
+uses the available deterministic proxies shown in the coefficient table rather
+than inventing another board-feature implementation inside `packages/ai`.
+
+| Personality | `gammon` | `primeLength` | `blots` | `blotExposure` | `trapped` | `raceLead` | `anchor` | `homePoints` | `oppOnBar` |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| Blitzer | +0.050 | 0 | 0 | +0.008 | 0 | 0 | 0 | +0.008 | +0.012 |
+| Priming Player | 0 | +0.012 | 0 | 0 | +0.006 | −0.0004 | 0 | 0 | 0 |
+| Racer | 0 | 0 | −0.004 | −0.012 | −0.004 | +0.0008 | −0.004 | 0 | −0.006 |
+| Anchor | 0 | −0.006 | 0 | 0 | 0 | −0.0003 | +0.014 | 0 | 0 |
+| Purist | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
 
 ### The safety clamp
 
