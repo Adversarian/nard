@@ -33,6 +33,7 @@ import {
 } from './draft'
 import { SeededDiceSource } from './dice'
 import { decisionMaker } from './view'
+import { sound } from '../sound/player'
 import {
   chooseOpponentMove,
   DEFAULT_OPPONENT,
@@ -174,6 +175,7 @@ export const useGame = create<GameStore>((set, get) => ({
     const { state, dice, rollNumber } = get()
     if (state.phase !== 'to-roll' && state.phase !== 'opening-roll') return
     const rolled = rollFromSource(state, dice, rollNumber)
+    sound.play('dice')
     set({ state: rolled, rollNumber: rollNumber + 1, draft: emptyDraft(rolled.position), selected: null })
 
     // A roll with no legal play is not a decision; do not make the player
@@ -207,6 +209,9 @@ export const useGame = create<GameStore>((set, get) => ({
     if (move) {
       // Turn is complete — commit it. The engine only ever sees whole turns.
       const played = playMove(state, move)
+      if (played.phase === 'game-over' || played.phase === 'match-over') {
+        sound.play('win', { gain: 0.8 })
+      }
       set({ state: played, draft: emptyDraft(played.position), selected: null })
       return
     }
@@ -222,11 +227,13 @@ export const useGame = create<GameStore>((set, get) => ({
   double() {
     const { state } = get()
     if (!canDouble(state)) return
+    sound.play('cube')
     set({ state: offerDouble(state) })
   },
   take() {
     const { state } = get()
     if (state.phase !== 'cube-offered') return
+    sound.play('cube', { gain: 0.7 })
     const next = takeDouble(state)
     set({ state: next, draft: emptyDraft(next.position) })
   },

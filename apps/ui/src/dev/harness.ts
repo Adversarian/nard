@@ -168,6 +168,12 @@ export interface NardPlayHarness {
   thinking(): boolean
   /** Skip the opponent's deliberate pacing. Automated tests only. */
   fast(on: boolean): void
+  /** Every sound played, for tools/sound.ts. */
+  sound(): { t: number; event: string; variant: number; gain: number; rate: number }[]
+  /** Registered sample counts per event. */
+  soundBanks(): Record<string, number>
+  /** Play a sound directly, to exercise the variant picker. */
+  playSound(event: string): void
   animating(): boolean
   settled(timeoutMs?: number): Promise<void>
   trace(ms?: number): Promise<TraceSample[]>

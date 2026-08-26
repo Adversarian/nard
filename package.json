@@ -17,7 +17,8 @@
     "difftest": "tsx tools/difftest.ts",
     "motion": "tsx tools/motion.ts",
     "check": "pnpm typecheck && pnpm test",
-    "playtest": "tsx tools/playtest.ts"
+    "playtest": "tsx tools/playtest.ts",
+    "sound": "tsx tools/sound.ts"
   },
   "devDependencies": {
     "@playwright/test": "1.62.1",
