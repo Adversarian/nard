@@ -31,6 +31,13 @@ export function Interaction({
   onDrop: (point: number) => void
 }) {
   const half = GEO.innerH / 2
+  /**
+   * When there is nothing to pick up or drop, the hit areas step aside.
+   *
+   * They tile the whole field, so leaving them live would swallow a click meant
+   * for the board underneath — which is how you roll.
+   */
+  const interactive = movable.length > 0 || destinations.length > 0
 
   return (
     <g>
@@ -91,7 +98,7 @@ export function Interaction({
       })}
 
       {/* hit targets, last so they sit above everything */}
-      {Array.from({ length: 24 }, (_, i) => {
+      {interactive && Array.from({ length: 24 }, (_, i) => {
         const p = i + 1
         const g = pointGeom(p)
         return (
@@ -109,27 +116,31 @@ export function Interaction({
       })}
 
       {/* the bar, for entering */}
-      <rect
-        x={FIELD_X + 6 * GEO.u}
-        y={FIELD_Y}
-        width={GEO.barW}
-        height={GEO.innerH}
-        fill="transparent"
-        style={{ cursor: movable.includes(25) ? 'pointer' : 'default' }}
-        onClick={() => onPick(25)}
-      />
+      {movable.includes(25) && (
+        <rect
+          x={FIELD_X + 6 * GEO.u}
+          y={FIELD_Y}
+          width={GEO.barW}
+          height={GEO.innerH}
+          fill="transparent"
+          style={{ cursor: 'pointer' }}
+          onClick={() => onPick(25)}
+        />
+      )}
 
       {/* the tray, for bearing off */}
-      <rect
-        x={FIELD_X + GEO.innerW + GEO.trayDivider}
-        y={FIELD_Y}
-        width={GEO.trayW}
-        height={GEO.innerH}
-        fill={destinations.includes(0) ? 'var(--inlay)' : 'transparent'}
-        opacity={destinations.includes(0) ? 0.12 : 1}
-        style={{ cursor: destinations.includes(0) ? 'pointer' : 'default' }}
-        onClick={() => onDrop(0)}
-      />
+      {destinations.includes(0) && (
+        <rect
+          x={FIELD_X + GEO.innerW + GEO.trayDivider}
+          y={FIELD_Y}
+          width={GEO.trayW}
+          height={GEO.innerH}
+          fill="var(--inlay)"
+          opacity="0.12"
+          style={{ cursor: 'pointer' }}
+          onClick={() => onDrop(0)}
+        />
+      )}
     </g>
   )
 }
