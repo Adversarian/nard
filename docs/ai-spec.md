@@ -189,3 +189,44 @@ consistent illustrated style and committed under
 - Opening books. gnubg already plays openings correctly.
 - Difficulty that adapts silently mid-match. If the opponent changes strength,
   the player must have chosen it.
+
+
+## Verified behaviour, and what the numbers do not say
+
+Checked independently after implementation, not taken on trust:
+
+- **Rung 6 plays all eight opening rolls to book** (`8/5 6/5` on 31, `13/7 8/7`
+  on 61, `24/18 18/13` on 65, and so on). This — not the PR table — is the real
+  evidence that the opponent is strong.
+- **Difficulty produces genuinely different play.** On a middle-game position
+  with close alternatives, rung 1 played nine distinct moves and chose the best
+  only 20% of the time; rung 3 chose it 39%; rung 6 always. Every choice stayed
+  inside the safety clamp, so weak play is plausible play rather than blunder.
+- **Killing gnubg mid-game degrades rather than hangs.** The request in flight
+  falls back, `onBackendError` fires with a clear message, and the next request
+  restarts the child.
+- **Cube decisions are sound.** A won position returns `too-good`/`pass`; the
+  opening correctly declines to double, because doubling there surrenders cube
+  ownership for nothing.
+
+Two caveats on the calibration table:
+
+1. **Rung 6's PR of 0.00 is tautological.** PR is measured as expected equity
+   loss against a 2-ply gnubg reference, and rung 6 always takes that
+   reference's top move. It says the rung agrees with the yardstick, not that
+   the yardstick is world class. Absolute strength would need rollouts.
+2. **523 decisions over 12 games is a modest sample.** The *spacing* between
+   rungs is the useful output; individual PR figures carry real noise. Re-run
+   with a larger corpus before quoting them as fact.
+
+## Open: the fallback is silent
+
+If the gnubg sidecar dies, play continues on the fixed-weight fallback, which is
+deliberately modest — it picked `13/7 7/6` on an opening 61 where gnubg plays
+`13/7 8/7`. Correct behaviour, but from the other side of the board it looks
+like the opponent suddenly started playing badly, and an expert will notice.
+
+The game must not stop, but it must not lie either. The UI needs a quiet,
+non-modal indicator that the strong engine is unavailable — and analysis
+produced while degraded has to be marked, or it will be wrong in exactly the
+positions he disputes. Scheduled with the rest of the sensory/UI work at M4.
