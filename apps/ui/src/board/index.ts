@@ -1,5 +1,5 @@
 export { Board } from './Board'
-export { Checkers } from './Checkers'
+export { AnimatedCheckers } from './AnimatedCheckers'
 export { Checker, CountChip, type Side } from './Checker'
 export { Die } from './Dice'
 export { Cube } from './Cube'

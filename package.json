@@ -11,7 +11,7 @@
     "build": "pnpm -r build",
     "test": "vitest run --passWithNoTests",
     "test:watch": "vitest --passWithNoTests",
-    "typecheck": "tsc -b --pretty false",
+    "typecheck": "tsc -b --force --pretty false",
     "shots": "tsx tools/shots.ts",
     "selfplay": "tsx tools/selfplay.ts",
     "difftest": "tsx tools/difftest.ts",
