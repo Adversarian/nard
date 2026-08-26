@@ -80,6 +80,17 @@ position — prime length, blot count and exposure, opponent checkers trapped
 behind our blockade, race lead in pips, advanced anchor held, home board points
 made, opponent checkers on the bar.
 
+Feature definitions are perspective-relative and deterministic:
+
+- `primeLength` is the longest consecutive run of made points, capped at six.
+- `blotExposure` sums, per blot, the fraction of the 36 ordered next rolls for
+  which the opponent has at least one legal move that hits it.
+- `trapped` is the largest number of opposing checkers behind any consecutive
+  blockade of at least two made points.
+- `raceLead` is opponent pips minus our pips, so positive means we are ahead.
+- `anchor` uses the opponent's home-board numbering: our 24-point anchor is 1,
+  our 19-point anchor is 6, and no anchor is 0.
+
 | Personality | Bias |
 | --- | --- |
 | **The Blitzer** | + gammon probability, + opponent-on-bar, + home points made, − blot penalty (accepts risk) |

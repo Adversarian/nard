@@ -132,14 +132,14 @@ export type Variant =
  * (docs/ai-spec.md). Computed from the on-roll player's perspective.
  */
 export interface StyleFeatures {
-  /** Longest run of consecutive made points, 1..6. */
+  /** Longest run of consecutive made points, 0..6. */
   readonly primeLength: number
   readonly blots: number
   /** Sum over our blots of the probability of being hit next roll. */
   readonly blotExposure: number
   /** Opponent checkers trapped behind our blockade. */
   readonly trapped: number
-  /** Our pip count minus theirs; positive means we are ahead. */
+  /** Their pip count minus ours; positive means we are ahead. */
   readonly raceLead: number
   /** Highest opponent-home-board anchor we hold, 0 if none. */
   readonly anchor: number
