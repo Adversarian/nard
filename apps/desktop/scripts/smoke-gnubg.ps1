@@ -96,9 +96,18 @@ try {
     id = 2
     method = 'cube_decision'
     params = @{
+      # Must match packages/ai/src/protocol.ts and packages/ai/bridge.py.
+      # This smoke test is a THIRD reader of that protocol, after the
+      # TypeScript client and the Rust bridge, and it is the only one that
+      # exercises the bundled Windows binary end to end.
       positionId = '4HPwATDgc/ABMA'
       cubeValue = 1
-      cubeOwned = $false
+      cubeOwner = -1
+      matchLength = 0
+      score = @(0, 0)
+      crawford = $false
+      jacoby = $false
+      plies = 0
     }
   }
   $Cube = Read-Response 2
