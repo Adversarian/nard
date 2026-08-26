@@ -39,4 +39,35 @@ export interface Evaluator {
   dispose(): Promise<void>
 }
 
-// GnubgEvaluator and NetEvaluator land in M2. See docs/ai-spec.md.
+export interface EvaluatorOptions {
+  /** Disable graceful degradation for benchmarks that require the primary backend. */
+  readonly allowFallback?: boolean
+  readonly onBackendError?: (error: Error) => void
+}
+
+export async function createEvaluator(
+  options: EvaluatorOptions = {},
+): Promise<Evaluator> {
+  const { GnubgEvaluator } = await import('./gnubg.js')
+  const onBackendError =
+    options.onBackendError === undefined
+      ? {}
+      : { onBackendError: options.onBackendError }
+  return new GnubgEvaluator({
+    ...onBackendError,
+    ...(options.allowFallback === false ? { fallback: null } : {}),
+  })
+}
+
+export {
+  chooseCube,
+  chooseMove,
+  DIFFICULTIES,
+  PERSONALITY_SAFETY_CLAMP,
+  selectRankedMove,
+  type CubeChoice,
+  type Difficulty,
+  type DifficultyRung,
+  type MoveSelection,
+  type Personality,
+} from './policy.js'
