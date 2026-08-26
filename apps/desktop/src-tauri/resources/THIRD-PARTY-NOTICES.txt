@@ -1,0 +1,19 @@
+GNU Backgammon 1.08.003
+========================
+
+nard bundles the official GNU Backgammon 1.08.003 Windows program and invokes
+it as a separate process over a line-delimited JSON/text protocol.
+
+GNU Backgammon is licensed under the GNU General Public License version 3.
+The complete GPL-3.0 text is installed beside the program as gnubg/COPYING.
+
+Official Windows binary:
+https://ftp.gnu.org/gnu/gnubg/gnubg-1_08_003-20240428-setup.exe
+
+Corresponding source:
+https://ftp.gnu.org/gnu/gnubg/gnubg-release-1.08.003-sources.tar.gz
+
+Project home:
+https://www.gnu.org/software/gnubg/
+
+No GNU Backgammon source is linked into or copied into nard's packages.

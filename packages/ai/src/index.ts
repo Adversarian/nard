@@ -79,6 +79,17 @@ export async function createEvaluator(
 }
 
 export {
+  cubeAnalysisFromBridge,
+  rankedMovesFromBridge,
+} from './bridge-result.js'
+export { NetEvaluator } from './net.js'
+export type {
+  CubeDecisionRequest,
+  CubeDecisionResponse,
+  RankMovesRequest,
+  RankMovesResponse,
+} from './protocol.js'
+export {
   chooseCube,
   chooseMove,
   DIFFICULTIES,

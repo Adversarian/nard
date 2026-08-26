@@ -36,8 +36,8 @@ package entrypoint.
 
 Backends:
 
-- **`GnubgEvaluator`** — default. Long-lived `gnubg -q -t -r -p bridge.py`
-  child process, JSON over stdio. See `adr/0004`.
+- **`GnubgEvaluator`** — default. Long-lived
+  `gnubg -q -t -r --python=<bridge.py>` child process, JSON over stdio. See `adr/0004`.
 - **`NetEvaluator`** — fallback. Pure TypeScript, deterministic fixed-weight
   evaluation. The M2 weights are deliberately modest bootstrap weights, not a
   claim of gnubg-level strength; a later TD-trained weights blob can replace

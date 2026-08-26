@@ -9,8 +9,24 @@
  * Nothing above this file knows which transport is in use, or that gnubg exists.
  */
 
-import type { CubeAnalysis, RankedMove } from '@nard/ai'
-import type { CubeState, Dice, Position } from '@nard/engine'
+import {
+  cubeAnalysisFromBridge,
+  NetEvaluator,
+  rankedMovesFromBridge,
+  type CubeAnalysis,
+  type CubeDecisionRequest,
+  type CubeDecisionResponse,
+  type RankedMove,
+  type RankMovesRequest,
+  type RankMovesResponse,
+} from '@nard/ai'
+import {
+  encodePositionId,
+  type CubeState,
+  type Dice,
+  type Position,
+} from '@nard/engine'
+import { invokeTauri, isTauri } from './tauri'
 
 export interface UiEvaluator {
   rankMoves(pos: Position, dice: Dice, plies?: 0 | 1 | 2): Promise<RankedMove[]>
@@ -35,12 +51,44 @@ async function post<T>(body: unknown): Promise<T> {
   return json
 }
 
+const fallback = new NetEvaluator()
+
 export const evaluator: UiEvaluator = {
   async rankMoves(pos, dice, plies = 1) {
+    if (isTauri()) {
+      try {
+        const params: RankMovesRequest = {
+          positionId: encodePositionId(pos),
+          dice,
+          plies,
+        }
+        const result = await invokeTauri<RankMovesResponse>('evaluate', {
+          request: { method: 'rank_moves', params },
+        })
+        return rankedMovesFromBridge(pos, dice, result)
+      } catch {
+        return fallback.rankMoves(pos, dice, { plies })
+      }
+    }
     const { moves } = await post<{ moves: RankedMove[] }>({ ...encode(pos), dice, plies })
     return moves
   },
   async cubeDecision(pos, cube) {
+    if (isTauri()) {
+      try {
+        const params: CubeDecisionRequest = {
+          positionId: encodePositionId(pos),
+          cubeValue: cube.value,
+          cubeOwned: cube.owner !== null,
+        }
+        const result = await invokeTauri<CubeDecisionResponse>('evaluate', {
+          request: { method: 'cube_decision', params },
+        })
+        return cubeAnalysisFromBridge(result)
+      } catch {
+        return fallback.cubeDecision(pos, cube)
+      }
+    }
     const { cube: analysis } = await post<{ cube: CubeAnalysis }>({ ...encode(pos), cube })
     return analysis
   },

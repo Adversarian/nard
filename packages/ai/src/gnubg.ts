@@ -13,92 +13,22 @@ import {
   GnubgBridgeClient,
   type BridgeClientOptions,
 } from './bridge-client.js'
+import {
+  cubeAnalysisFromBridge,
+  rankedMovesFromBridge,
+} from './bridge-result.js'
 import type {
   CubeAnalysis,
   EvalOpts,
   EvaluationContext,
   Evaluator,
-  Probs,
   RankedMove,
 } from './index.js'
 import { NetEvaluator } from './net.js'
-import type {
-  CubeDecisionResponse,
-  RankMovesResponse,
-} from './protocol.js'
 
 export interface GnubgEvaluatorOptions extends BridgeClientOptions {
   readonly fallback?: Evaluator | null
   readonly onBackendError?: (error: Error) => void
-}
-
-function finite(value: number, field: string): number {
-  if (!Number.isFinite(value)) {
-    throw new Error(`GNU Backgammon returned a non-finite ${field}`)
-  }
-  return value
-}
-
-function probs(values: readonly number[]): Probs {
-  if (values.length !== 5) {
-    throw new Error('GNU Backgammon returned an invalid probability vector')
-  }
-  const parsed = values.map((value, index) =>
-    finite(value, `probability ${index}`),
-  )
-  return [parsed[0]!, parsed[1]!, parsed[2]!, parsed[3]!, parsed[4]!]
-}
-
-function mapRankedMoves(
-  pos: Position,
-  dice: Dice,
-  response: RankMovesResponse,
-): RankedMove[] {
-  const legal = generateLegalMoves(pos, dice)
-  const byPosition = new Map(
-    legal.map((move) => [encodePositionId(applyMove(pos, move)), move]),
-  )
-  const ranked: RankedMove[] = []
-
-  for (const candidate of response.moves) {
-    const move = byPosition.get(candidate.positionId)
-    if (move === undefined) {
-      throw new Error(
-        `GNU Backgammon returned an unknown move ${candidate.move} (${candidate.positionId})`,
-      )
-    }
-    byPosition.delete(candidate.positionId)
-    ranked.push({
-      move,
-      equity: finite(candidate.equity, 'move equity'),
-      eqdiff: Math.min(0, finite(candidate.eqdiff, 'move equity difference')),
-      probs: probs(candidate.probs),
-    })
-  }
-
-  if (byPosition.size > 0) {
-    throw new Error(
-      `GNU Backgammon omitted ${byPosition.size} legal move${byPosition.size === 1 ? '' : 's'}`,
-    )
-  }
-
-  return ranked.sort((left, right) => right.equity - left.equity)
-}
-
-function validateCube(response: CubeDecisionResponse): CubeAnalysis {
-  return {
-    action: response.action,
-    response: response.response,
-    equityNoDouble: finite(response.equityNoDouble, 'no-double equity'),
-    equityDoubleTake: finite(
-      response.equityDoubleTake,
-      'double/take equity',
-    ),
-    equityDoublePass: finite(
-      response.equityDoublePass,
-      'double/pass equity',
-    ),
-  }
 }
 
 function asError(error: unknown): Error {
@@ -172,7 +102,7 @@ export class GnubgEvaluator implements Evaluator {
         plies: opts.plies ?? 2,
         ...(matchId === undefined ? {} : { matchId }),
       })
-      return mapRankedMoves(pos, dice, response)
+      return rankedMovesFromBridge(pos, dice, response)
     } catch (error) {
       return this.#fallBack(
         error,
@@ -198,7 +128,7 @@ export class GnubgEvaluator implements Evaluator {
         jacoby: context?.match.jacoby ?? false,
         plies: opts.plies ?? 2,
       })
-      return validateCube(response)
+      return cubeAnalysisFromBridge(response)
     } catch (error) {
       return this.#fallBack(
         error,
