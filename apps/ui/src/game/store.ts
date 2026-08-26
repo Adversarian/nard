@@ -7,21 +7,13 @@
  */
 
 import { create } from 'zustand'
-import {
-  canDouble,
-  createGameState,
-  createMatchState,
-  legalMoves,
-  offerDouble,
-  passDouble,
-  passTurn,
-  playMove,
-  rollFromSource,
-  startNextGame,
-  takeDouble,
-  type GameState,
-  type Hop,
-} from '@nard/engine'
+/**
+ * Only `canDouble` and `legalMoves` are read from the engine directly. Every
+ * state TRANSITION goes through the MatchRecorder, so the record and the board
+ * cannot drift apart — importing the engine's transition functions here is what
+ * let that happen once already.
+ */
+import { canDouble, legalMoves, type GameState, type Hop } from '@nard/engine'
 import {
   availableHops,
   completed,
@@ -32,7 +24,8 @@ import {
   undoLast,
   type Draft,
 } from './draft'
-import { SeededDiceSource } from './dice'
+import { MatchRecorder, saveMatch, type SavedMatchV1 } from '@nard/analysis'
+import { archiveMatch } from './archive'
 import { decisionMaker } from './view'
 import { sound } from '../sound/player'
 import {
@@ -58,8 +51,14 @@ interface GameStore {
   draft: Draft
   /** Point the player has picked a checker up from, if any. */
   selected: number | null
-  rollNumber: number
-  dice: SeededDiceSource
+  /**
+   * Owns the game state and the commit-reveal dice.
+   *
+   * Every match is recorded and replayable by construction rather than as an
+   * extra step that can be forgotten — which is also what makes the dice
+   * provably fair (docs/dice-fairness.md) and the analysis possible at all.
+   */
+  recorder: MatchRecorder
 
   opponent: OpponentConfig
   /** True while the opponent is deciding, for the UI to show a quiet marker. */
@@ -79,6 +78,8 @@ interface GameStore {
   view: 'ladder' | 'play'
   opponentId: string
   progress: Progress
+  /** The archived match just finished, so Review knows what to open. */
+  lastMatchId: string | null
   startMatch(opponent: Opponent, matchLength: number): void
   toLadder(): void
   runOpponent(): Promise<void>
@@ -94,14 +95,28 @@ interface GameStore {
   nextGame(): void
 }
 
+function newRecorder(matchLength = 7): MatchRecorder {
+  const seed = new Uint8Array(32)
+  globalThis.crypto.getRandomValues(seed)
+  return new MatchRecorder(seed, {
+    startedAt: new Date().toISOString(),
+    match: { length: matchLength, score: { light: 0, dark: 0 }, crawfordUsed: false, jacoby: false },
+    rules: { variant: 'standard', automaticDoubles: false },
+  })
+}
+
 const fresh = () => {
-  const state = createGameState()
-  return { state, draft: emptyDraft(state.position), selected: null, rollNumber: 0 }
+  const recorder = newRecorder()
+  return {
+    recorder,
+    state: recorder.state,
+    draft: emptyDraft(recorder.state.position),
+    selected: null,
+  }
 }
 
 export const useGame = create<GameStore>((set, get) => ({
   ...fresh(),
-  dice: new SeededDiceSource(),
   opponent: DEFAULT_OPPONENT,
   thinking: false,
   degraded: false,
@@ -110,19 +125,20 @@ export const useGame = create<GameStore>((set, get) => ({
   view: 'ladder',
   opponentId: 'mehrdad',
   progress: loadProgress(),
+  lastMatchId: null,
 
   startMatch(opponent, matchLength) {
-    const state = createGameState(createMatchState({ length: matchLength }))
+    const recorder = newRecorder(matchLength)
     set({
-      state,
-      draft: emptyDraft(state.position),
+      recorder,
+      state: recorder.state,
+      draft: emptyDraft(recorder.state.position),
       selected: null,
-      rollNumber: 0,
-      dice: new SeededDiceSource(),
       opponent: { rung: opponent.rung, personality: opponent.personality, side: 'dark' },
       opponentId: opponent.id,
       view: 'play',
       degraded: false,
+      lastMatchId: null,
     })
   },
 
@@ -190,7 +206,13 @@ export const useGame = create<GameStore>((set, get) => ({
           set({ thinking: false, degraded: get().degraded || degraded })
 
           if (move === null) {
-            if (get().state === state) set({ state: passTurn(state) })
+            // Through the recorder, not the engine directly. Advancing the
+            // store while leaving the recorder behind desyncs the two, and the
+            // next roll then throws — which is the recorder doing its job.
+            if (get().state === state) {
+              const passed = get().recorder.passTurn()
+              set({ state: passed, draft: emptyDraft(passed.position) })
+            }
             continue
           }
           // One checker at a time, so the player can see what was played.
@@ -209,11 +231,11 @@ export const useGame = create<GameStore>((set, get) => ({
   },
 
   roll() {
-    const { state, dice, rollNumber } = get()
+    const { state, recorder } = get()
     if (state.phase !== 'to-roll' && state.phase !== 'opening-roll') return
-    const rolled = rollFromSource(state, dice, rollNumber)
+    const rolled = recorder.roll()
     sound.play('dice')
-    set({ state: rolled, rollNumber: rollNumber + 1, draft: emptyDraft(rolled.position), selected: null })
+    set({ state: rolled, draft: emptyDraft(rolled.position), selected: null })
 
     // A roll with no legal play is not a decision; do not make the player
     // acknowledge it with a click. Show it, then move on.
@@ -221,7 +243,7 @@ export const useGame = create<GameStore>((set, get) => ({
       setTimeout(() => {
         const now = get().state
         if (now === rolled) {
-          const passed = passTurn(now)
+          const passed = get().recorder.passTurn()
           set({ state: passed, draft: emptyDraft(passed.position), selected: null })
         }
       }, 900)
@@ -245,15 +267,16 @@ export const useGame = create<GameStore>((set, get) => ({
     const move = completed(legal, next)
     if (move) {
       // Turn is complete — commit it. The engine only ever sees whole turns.
-      const played = playMove(state, move)
+      const played = get().recorder.playMove(move)
       if (played.phase === 'game-over' || played.phase === 'match-over') {
         sound.play('win', { gain: 0.8 })
       }
       if (played.phase === 'match-over' && played.result) {
-        const { progress, opponentId } = get()
+        const { progress, opponentId, recorder } = get()
         const next = recordResult(progress, opponentId, played.result.winner === 'light')
         saveProgress(next)
-        set({ progress: next })
+        const id = archiveMatch(recorder.toSavedMatch())
+        set({ progress: next, lastMatchId: id })
       }
       set({ state: played, draft: emptyDraft(played.position), selected: null })
       return
@@ -268,29 +291,29 @@ export const useGame = create<GameStore>((set, get) => ({
   },
 
   double() {
-    const { state } = get()
+    const { state, recorder } = get()
     if (!canDouble(state)) return
     sound.play('cube')
-    set({ state: offerDouble(state) })
+    set({ state: recorder.offerDouble() })
   },
   take() {
-    const { state } = get()
+    const { state, recorder } = get()
     if (state.phase !== 'cube-offered') return
     sound.play('cube', { gain: 0.7 })
-    const next = takeDouble(state)
+    const next = recorder.takeDouble()
     set({ state: next, draft: emptyDraft(next.position) })
   },
   passCube() {
-    const { state } = get()
+    const { state, recorder } = get()
     if (state.phase !== 'cube-offered') return
-    const next = passDouble(state)
+    const next = recorder.passDouble()
     set({ state: next, draft: emptyDraft(next.position) })
   },
 
   nextGame() {
-    const { state } = get()
+    const { state, recorder } = get()
     if (state.phase !== 'game-over') return
-    const next = startNextGame(state)
+    const next = recorder.startNextGame()
     set({ state: next, draft: emptyDraft(next.position), selected: null })
   },
 }))
