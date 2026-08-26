@@ -85,6 +85,12 @@ pnpm difftest          # engine move generation vs. gnubg
 pnpm selfplay          # headless AI-vs-AI benchmark
 ```
 
+**`pnpm typecheck` runs `tsc -b --force` on purpose.** Incremental builds can
+report a clean tree while a real type error sits in a file they decided not to
+rebuild — that happened here, and a broken `main` was merged behind a green
+local check. The forced build costs a couple of seconds on a workspace this
+size. Do not "optimise" it back.
+
 ## 5. Board representation — read this before touching the engine
 
 This is the single most common source of bugs in backgammon code. The engine
