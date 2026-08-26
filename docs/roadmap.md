@@ -36,7 +36,7 @@ cube decisions at score match gnubg's.
 
 Full visual treatment per `design-language.md`, all three themes, Persian/RTL,
 motion, and **sound** (`sound-spec.md`). Tauri shell, gnubg sidecar packaged,
-bearoff DB generated.
+official one-sided bearoff database bundled.
 
 **Exit:** it installs and runs on the target machine with no toolchain present,
 every scene in the gallery looks right in all three themes and both languages,

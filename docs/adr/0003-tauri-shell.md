@@ -37,3 +37,27 @@ checked on Windows before release rather than assumed.
   release. Mitigated by keeping the visual language CSS-first and avoiding
   bleeding-edge features.
 - Packaging the gnubg sidecar is per-platform work, scheduled at M4.
+
+## M4 implementation
+
+The browser and packaged transports share the same `UiEvaluator` interface.
+During browser development Vite continues to serve `/api/eval`; in the packaged
+app `platform/evaluator.ts` invokes one Rust command. Rust owns the resident
+gnubg process, its timeout and restart boundary, while the existing
+TypeScript-side bridge result adapter remains responsible for turning gnubg
+position IDs into engine-native moves.
+
+The Windows build bundles the complete official gnubg installation as a Tauri
+resource rather than assuming a system installation. A build manifest records
+the executable and data-directory paths relative to the resource root. The
+same platform seam exposes resolved app-data paths; no component constructs a
+Windows filesystem path.
+
+Linux development compiles the shell and IPC wiring but is not a release path.
+
+**Do not build the desktop app locally to "check it compiles".** A local Tauri
+build pulls roughly 207MB of Rust crates and leaves a 2.2GB `target/`
+directory, on a metered connection, to prove something the Windows workflow
+proves properly. Windows artifacts are verified in CI. If the shell will not
+compile, CI says so within minutes and costs nobody any bandwidth.
+The installer is built natively on a `windows-latest` GitHub Actions runner.

@@ -25,10 +25,12 @@ thing with `pnpm check` and nothing needs cross-compiling to be tested.
 Dependencies point one way only. `engine` imports nothing of ours. `ui` is
 imported by nothing.
 
-`apps/desktop` (Tauri v2) arrives at M4 and is deliberately thin: a window, a
-menu bar, file dialogs for import/export, and the app's data directory. All game
-logic stays in the packages above so it remains testable in Node and viewable in
-a browser.
+`apps/desktop` is the deliberately thin Tauri v2 shipping shell: a window, a
+menu bar, the app's data directory, and supervision of the bundled gnubg
+process. The web app calls those capabilities through `apps/ui/src/platform`;
+it does not resolve native paths or import Tauri APIs elsewhere. All game logic
+stays in the packages above so it remains testable in Node and viewable in a
+browser.
 
 ## Why the engine is pure
 
@@ -52,7 +54,7 @@ need randomness, take a `Dice` source as a parameter.
 The opponent's brain is **GNU Backgammon**, run as a long-lived child process.
 
 ```
-packages/ai  ──JSON over stdio──▶  gnubg -q -t -r -p bridge.py
+packages/ai  ──JSON over stdio──▶  gnubg -q -t -r --python=<bridge.py>
                                    (embedded Python 3.12)
 ```
 
@@ -142,3 +144,8 @@ Local files only, in the OS app-data directory:
 
 Formats are versioned from day one (`{v: 1, ...}`). A saved match must remain
 readable forever; it is the record of games with his son.
+
+The desktop shell creates the app-data root and `matches/` directory, then
+provides the resolved `matches`, `profile.json`, and `drills.json` paths through
+the platform seam. Browser development has no native paths and keeps using its
+existing browser storage until the M5 persistence readers and writers land.

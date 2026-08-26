@@ -1,0 +1,106 @@
+name: Windows installer
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - '**'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: windows-installer-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: windows-latest
+    # 120, not 60. A cold runner compiles Tauri's whole crate tree from
+    # scratch and the very first build overran 60 minutes and was cancelled.
+    # Warm builds finish in about ten; this is headroom for the cold one, not
+    # an expectation.
+    timeout-minutes: 120
+    env:
+      NARD_GNUBG_CACHE_DIR: ${{ github.workspace }}\.cache\gnubg
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # package.json's packageManager field is the single pnpm version source.
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache GNU Backgammon installer
+        id: gnubg-cache
+        uses: actions/cache/restore@v4
+        with:
+          path: .cache/gnubg
+          key: gnubg-windows-1.08.003-68cd01d92a99e6ec-innoextract-1.9-6989342c9b026a00
+          restore-keys: |
+            gnubg-windows-1.08.003-68cd01d92a99e6ec
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Prime GNU Backgammon build cache
+        shell: powershell
+        run: .\apps\desktop\scripts\prepare-gnubg.ps1
+
+      - name: Save GNU Backgammon build cache
+        if: success() && steps.gnubg-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: .cache/gnubg
+          key: gnubg-windows-1.08.003-68cd01d92a99e6ec-innoextract-1.9-6989342c9b026a00
+
+      - run: pnpm check
+      - run: pnpm build
+
+      - name: Verify installer and bundled obligations
+        shell: pwsh
+        run: |
+          $installer = Get-ChildItem 'apps/desktop/src-tauri/target/release/bundle/nsis/*.exe'
+          if ($installer.Count -ne 1) {
+            throw "Expected one NSIS installer, found $($installer.Count)"
+          }
+
+          $gnubg = 'apps/desktop/src-tauri/resources/gnubg'
+          foreach ($required in @(
+            "$gnubg/bundle-manifest.json",
+            "$gnubg/COPYING",
+            "$gnubg/NARD-GNUBG-NOTICE.txt"
+          )) {
+            if (-not (Test-Path $required)) {
+              throw "Missing bundled GNU Backgammon obligation: $required"
+            }
+          }
+
+          $manifest = Get-Content "$gnubg/bundle-manifest.json" -Raw | ConvertFrom-Json
+          foreach ($relative in @(
+            $manifest.binary,
+            $manifest.weights,
+            $manifest.oneSidedBearoff
+          )) {
+            if (-not (Test-Path (Join-Path $gnubg $relative))) {
+              throw "Missing staged GNU Backgammon file: $relative"
+            }
+          }
+
+          "Installer: $($installer.Name) ($([Math]::Round($installer.Length / 1MB, 1)) MiB)" |
+            Add-Content $env:GITHUB_STEP_SUMMARY
+          "GNU Backgammon: $($manifest.version)" |
+            Add-Content $env:GITHUB_STEP_SUMMARY
+          "One-sided bearoff: $($manifest.oneSidedBearoff)" |
+            Add-Content $env:GITHUB_STEP_SUMMARY
+
+      - name: Upload Windows installer
+        uses: actions/upload-artifact@v4
+        with:
+          name: nard-windows-installer
+          path: apps/desktop/src-tauri/target/release/bundle/nsis/*.exe
+          if-no-files-found: error
+          retention-days: 14

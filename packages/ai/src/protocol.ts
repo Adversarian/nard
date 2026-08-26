@@ -1,3 +1,24 @@
+/**
+ * The evaluator bridge protocol.
+ *
+ * THIS FILE IS THE DEFINITION. It has readers in four languages, and only one
+ * of them is checked by the TypeScript compiler:
+ *
+ *   packages/ai/src/gnubg.ts              TS   builds requests
+ *   apps/ui/src/platform/evaluator.ts     TS   builds requests (Tauri path)
+ *   packages/ai/bridge.py                 PY   reads params inside gnubg
+ *   apps/desktop/src-tauri/src/lib.rs     RS   serde structs, packaged app
+ *   apps/desktop/scripts/smoke-gnubg.ps1  PS1  end-to-end check on Windows
+ *
+ * **Changing a field here does not break any of the others at build time.** It
+ * breaks them at runtime, and only some of them only in the packaged app. This
+ * has already happened once: adding match context to the cube request left the
+ * Rust struct and the PowerShell smoke test behind, and the failure showed up
+ * as a Windows CI error four steps removed from the cause.
+ *
+ * Change a field, then grep this list. All of it.
+ */
+
 import type { Dice } from '@nard/engine'
 
 export interface RankMovesRequest {

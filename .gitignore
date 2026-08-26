@@ -21,6 +21,8 @@ yarn-error.log*
 # Rust / Tauri
 target/
 **/*.rs.bk
+/apps/desktop/src-tauri/resources/gnubg/
+/apps/desktop/src-tauri/gen/schemas/
 
 # Python (training / tooling)
 __pycache__/

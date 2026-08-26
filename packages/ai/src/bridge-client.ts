@@ -47,7 +47,16 @@ function defaultCommand(): BridgeCommand {
 
   return {
     command: binary,
-    args: ['-q', '-t', '-r', '-P', data, '-D', data, '-p', bridge],
+    args: [
+      '-q',
+      '-t',
+      '-r',
+      '-P',
+      data,
+      '-D',
+      data,
+      `--python=${bridge}`,
+    ],
   }
 }
 

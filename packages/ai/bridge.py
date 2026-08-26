@@ -148,7 +148,10 @@ for line in sys.stdin:
 
     request_id = None
     try:
-        request = json.loads(line)
+        # PowerShell's redirected StandardInput may emit a UTF-8 BOM on the
+        # first line. Rust and Node write BOM-free UTF-8, but accepting one
+        # here keeps the same bridge portable across the Windows smoke path.
+        request = json.loads(line.lstrip("\ufeff"))
         request_id = request.get("id")
         respond({"id": request_id, "ok": True, "result": dispatch(request)})
     except Exception as error:
