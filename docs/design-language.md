@@ -79,22 +79,45 @@ headings only. Nothing lighter than 400 — it falls apart in Persian.
 
 ## Board geometry
 
-Everything derives from one unit, `u` = the width of a point.
+Everything derives from one unit, `u` = the width of a point. **The proportions
+are taken from a real tournament board, not invented** — ~1.75in points, ~1.5in
+checkers, ~7in point length, ~2in bar, on a ~23×16in interior. That is why the
+board reads as an object rather than as a diagram, and it is why these numbers
+should not be nudged for looks without measuring against a real board first.
 
-| Quantity | Value |
-| --- | --- |
-| checker diameter | `0.86u` |
-| point height | `5.2 ×` checker diameter |
-| bar width | `1.4u` |
-| inner field | `12u + bar` wide |
-| frame thickness | `0.55u` |
-| inlay band | `0.18u`, centred in the frame |
+| Quantity | Value | Real-board equivalent |
+| --- | --- | --- |
+| checker diameter | `0.857u` | 1.5in on a 1.75in point |
+| point height | `4.67 ×` checker diameter | 7in |
+| bar width | `1.15u` | 2in |
+| inner field | `13.15u × 9.18u` (aspect **1.43**) | 23×16in |
+| frame thickness | `0.5u` | |
+| inlay band | `0.2u`, set toward the inner edge | |
+| tray | `1.05u` wide, behind a `0.14u` divider | |
 
-- **Maximum five checkers drawn stacked.** Six or more compresses the spacing to
-  `0.62 ×` diameter and puts a small brass count chip on the top checker. Never
-  hide checkers, never overflow the point.
-- Point apexes are slightly rounded (`2px` at `u = 64px`). Real inlay is not
-  razor-sharp, and a hard point reads as clip-art.
+### Stacking
+
+- **Five checkers sit at full diameter and overhang the point very slightly.**
+  This is correct — they do on a real board too. Do not lengthen the point to
+  make them fit.
+- **Six or more compress** to fit within the point, down to a floor of `0.55`
+  diameters.
+- Past that floor the stack would read as a smear, so it truncates at what fits
+  and puts a small brass count chip on the top checker. Never hide checkers
+  silently, never overflow into the frame.
+
+### Depth
+
+The case is a physical object and the parts must read as such:
+
+- **The bar is in shadow.** It sits between two raised halves, so it is *darker*
+  than the frame and lit from neither end. Rendering it as bright as the case
+  makes it read as a plank laid on top of the board — which was the first thing
+  that looked wrong when this was built.
+- **The tray is a well**, sunk behind a raised divider: a wooden floor darker
+  than the frame, with an inner shadow at the top lip.
+- Raised edges get a dark falloff on both sides (`#edge-h`), never a bright
+  outline.
 
 ### Direction is a setting, not a language property
 
