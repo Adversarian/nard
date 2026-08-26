@@ -13,6 +13,7 @@
     "test:watch": "vitest --passWithNoTests",
     "typecheck": "tsc -b --force --pretty false",
     "shots": "tsx tools/shots.ts",
+    "analyse": "tsx tools/analyse.ts",
     "selfplay": "tsx tools/selfplay.ts",
     "difftest": "tsx tools/difftest.ts",
     "motion": "tsx tools/motion.ts",

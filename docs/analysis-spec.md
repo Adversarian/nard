@@ -13,7 +13,14 @@ For each checker play and each cube decision:
 | **equity** | cubeful equity of the move played |
 | **best** | the highest-equity legal move |
 | **error** | `equity(played) − equity(best)` — always ≤ 0 |
-| **luck** | `equity(position after roll) − mean equity over all 21 rolls` |
+| **luck** | `best-play equity(position after roll) − expected equity over all rolls` |
+
+The 21 unique rolls are probability weighted: doubles have weight 1 and
+non-doubles weight 2, for 36 total outcomes. Opening rolls are the 30 ordered
+non-ties because the dice belong to different players. Luck is attached to the
+roll event and to its following checker decision; cube decisions have
+`luck: null`. A roll with no legal play still contributes to match luck even
+though it creates no checker decision.
 
 Errors are classified by magnitude, using the conventional thresholds so the
 numbers mean the same thing they mean everywhere else in backgammon:
@@ -21,9 +28,9 @@ numbers mean the same thing they mean everywhere else in backgammon:
 | Band | Error |
 | --- | --- |
 | Good | `> −0.020` |
-| Doubtful | `−0.020` to `−0.040` |
-| Error | `−0.040` to `−0.080` |
-| **Blunder** | `< −0.080` |
+| Doubtful | `≤ −0.020` and `> −0.040` |
+| Error | `≤ −0.040` and `> −0.080` |
+| **Blunder** | `≤ −0.080` |
 
 ## Performance rating (PR)
 
@@ -37,12 +44,20 @@ PR = 500 × (total equity lost) / (number of non-forced decisions)
 Forced moves (one legal option) are excluded — they are not decisions and
 including them deflates the rating.
 
-PR is reported per game, per match, and as a rolling figure over the last 20
-matches. **The rolling chart is the retention feature**: a number that goes down
-over months is the reason to keep playing.
+PR is reported per player, per game, per match, and as a rolling figure over
+the last 20 matches. Rolling PR aggregates equity loss and decision counts; it
+does not average already-rounded PR figures. **The rolling chart is the
+retention feature**: a number that goes down over months is the reason to keep
+playing.
 
 Checker-play PR and cube PR are reported separately. They are different skills
 and improve at different rates.
+
+For cube PR, the conventional GNU denominator is used: every actual
+double/take/pass, plus no-double decisions where the relevant equities are
+within `0.16` or the position is too good. All cube errors still contribute to
+equity lost. Counting every trivial no-double would make cube PR look better
+merely because a match had more quiet pre-roll positions.
 
 ## Error attribution
 
@@ -58,6 +73,18 @@ This produces the sentence that makes the feature worth having: *"Across your
 last 20 matches, your most expensive habit is playing too safe when behind in
 the race — 34 occurrences, 2.1 PR."*
 
+The equity error is evaluator output; the labels are deterministic heuristics,
+not additional evaluator claims:
+
+- the first six checker plays are `opening`;
+- `bear-off` starts after the first checker is borne off, `bear-in` when all
+  checkers are home, and `race` when the sides have no contact;
+- theme chooses the largest relevant difference in hits, prime length, anchor
+  or blot exposure, with cube and bear-off special cases;
+- direction compares a documented risk score built from the existing style
+  features. If played and best have the same score, direction is `unclear`
+  rather than fabricating certainty.
+
 ## Match review
 
 After a match: a move list with an equity band per decision, a luck-vs-skill
@@ -66,7 +93,8 @@ played move and the best move side by side, showing both resulting positions and
 the equity gap.
 
 The review must load instantly. Analysis runs in a worker as the match plays,
-not on demand at the end.
+not on demand at the end. The analysis package has no top-level effects and
+reports logical work units through `onProgress`; it never logs.
 
 ## Drills
 
@@ -78,6 +106,42 @@ evaluator immediately.
 Drawn from his *own* games. Generic puzzle packs are not interesting to someone
 at his level.
 
+`drills.json` stores source match/decision IDs, position and Match IDs, dice,
+played/best resulting Position IDs, attribution, and the conventional SM-2
+fields: repetitions, interval in days, ease factor, due time and last review
+time. Reviews use qualities 0–5, intervals 1 then 6 days, and the standard 1.3
+ease-factor floor.
+
+## Saved match v1
+
+The durable input is:
+
+```ts
+{
+  v: 1,
+  seed: string,        // 32-byte lower-case hex
+  commitment: string,  // SHA-256(seed), lower-case hex
+  decisions: (
+    | {kind: 'roll'}
+    | {kind: 'move', positionId: string}
+    | {kind: 'pass-turn'}
+    | {kind: 'double' | 'take' | 'drop' | 'next-game'}
+  )[],
+  meta: {
+    startedAt: string,
+    completedAt?: string,
+    match: {length, score, crawfordUsed, jacoby},
+    rules: {variant: 'standard', automaticDoubles},
+    players?: {light?: {name}, dark?: {name}}
+  }
+}
+```
+
+Recording stores every engine transition, including forced transitions, because
+`replayTo(index)` means exactly "state after transition index". Analysis later
+decides which transitions count as decisions. Unknown additive fields are
+preserved by load/save so a v1 file is not damaged by a newer reader.
+
 ## Honesty rules
 
 - The evaluator's verdict is reported with its search depth. A 0-ply "best move"
@@ -86,3 +150,9 @@ at his level.
 - Where a decision is close (`|error| < 0.005`), say "equivalent", not "error".
 - Rollout on demand for positions he disputes, and show the confidence interval.
   If he thinks the bot is wrong, he should be able to make it think harder.
+
+The current `Evaluator` supports deterministic evaluation through 2-ply, not
+rollouts or confidence intervals. The analysis result keeps exact Position and
+Match IDs so a future rollout method can address the disputed decision without
+changing the saved-match format; rollout execution is not represented as
+implemented until the evaluator exposes it.
