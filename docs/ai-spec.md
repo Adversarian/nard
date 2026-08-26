@@ -183,7 +183,7 @@ it is a tunable constant with a test asserting no personality exceeds it.
 Six opponents, each a (rung, personality) pair with a name, a portrait, and two
 lines of character. Beating one unlocks the next. Head-to-head records persist.
 
-Portraits are generated with the `torob-ai-sub-image-generation` skill in a
+Portraits are generated with `gpt-image-2` in a
 consistent illustrated style and committed under
 `apps/ui/src/assets/portraits/`.
 
