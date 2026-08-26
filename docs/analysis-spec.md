@@ -34,12 +34,22 @@ numbers mean the same thing they mean everywhere else in backgammon:
 
 ## Performance rating (PR)
 
-The headline number. Mean equity loss per decision, scaled by 500 so it lands on
-the familiar scale where world class is ~2 and a strong club player is ~7.
+The headline number. Mean equity loss per decision in **milli-EMG**, the scale
+GNU Backgammon and Extreme Gammon both report, so a figure here means what it
+means everywhere else in backgammon — world class about 2-3, a strong club
+player around 7.
 
 ```
-PR = 500 × (total equity lost) / (number of non-forced decisions)
+PR = 1000 × (total equity lost) / (number of non-forced decisions)
 ```
+
+An earlier draft of this document said 500 while also claiming world class is
+~2. Those are inconsistent by a factor of two, and the implementation faithfully
+reproduced the error. Caught by exporting a match to GNU Backgammon and
+comparing: our total equity lost matched its `Error total EMG` exactly, while
+our PR came out at half its `Error rate mEMG`. **The equity was right and only
+the scale was wrong**, which is precisely the kind of mistake that survives
+unit tests and gets caught by checking against something external.
 
 Forced moves (one legal option) are excluded — they are not decisions and
 including them deflates the rating.
@@ -156,3 +166,45 @@ rollouts or confidence intervals. The analysis result keeps exact Position and
 Match IDs so a future rollout method can address the disputed decision without
 changing the saved-match format; rollout execution is not represented as
 implemented until the evaluator exposes it.
+
+
+## Verified against GNU Backgammon
+
+The whole point of PR is that it means the same thing here as it does anywhere
+else, so it is checked against gnubg rather than against our own expectations.
+`pnpm analyse <match> --export-mat=<file>` writes a match gnubg can import; run
+`analyse match` and `show statistics match` there and compare.
+
+On the fixture in `packages/analysis/test/fixtures/gnubg-comparison-v1.json`, at
+identical 2-ply settings:
+
+| | nard | gnubg |
+| --- | ---: | ---: |
+| Light, error total EMG | 5.1939 | 5.194 |
+| Dark, error total EMG | 5.5928 | 5.593 |
+| Light, error rate | 185.49 | 185.5 |
+| Dark, error rate | 199.74 | 199.7 |
+
+**Redo this comparison after any change to the analysis engine.** It is the only
+check that catches an error the unit tests agree with.
+
+## Known discrepancy: luck totals
+
+Skill matches exactly; **luck does not**.
+
+| | nard | gnubg |
+| --- | ---: | ---: |
+| Light | −1.2751 | −1.191 |
+| Dark | −0.0465 | −0.328 |
+
+Light is about 7% out and Dark is out by a factor of seven, though both are
+small in absolute terms. This has not been tuned away, and it has not been
+diagnosed either. Likely candidates: how the opening roll is attributed, and
+whether the 21 distinct rolls are weighted by probability (doubles 1/36,
+non-doubles 2/36) at every step.
+
+**Consequence, and it is not cosmetic.** Luck is what backs the reassurance in
+`dice-fairness.md` — "you were −0.4 in luck and outplayed him" is only worth
+saying if the number is right. Until this is resolved the UI must not present
+luck as an authoritative figure, and any screen that shows it says it is
+approximate. Skill, error bands and PR are unaffected and can be shown plainly.

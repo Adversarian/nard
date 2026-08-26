@@ -216,7 +216,7 @@ function metric(value: MutableMetric): PerformanceMetric {
     pr:
       value.decisions === 0
         ? null
-        : (500 * value.equityLost) / value.decisions,
+        : (PR_SCALE * value.equityLost) / value.decisions,
   }
 }
 
@@ -843,6 +843,18 @@ export interface RollingPrPoint {
 }
 
 /** Aggregate PR by equity and decision counts, never by averaging PR values. */
+/**
+ * PR is mean equity loss per decision in milli-EMG — the same scale GNU
+ * Backgammon and Extreme Gammon report, so a number here means what it means
+ * everywhere else in backgammon. World class is about 2-3; a strong club player
+ * around 7.
+ *
+ * Verified against gnubg on the same match: our total equity lost matches its
+ * "Error total EMG" exactly, and this multiplier makes our PR match its
+ * "Error rate mEMG" exactly too.
+ */
+export const PR_SCALE = 1000
+
 export function rollingPr(
   analyses: readonly MatchAnalysis[],
   windowSize = 20,
