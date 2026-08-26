@@ -22,9 +22,20 @@ import {
 export function Board({
   home = 'right',
   children,
+  onFieldClick,
 }: {
   home?: HomeSide
   children?: React.ReactNode
+  /**
+   * Clicking the board rolls, the way you pick the dice up rather than
+   * travelling to a button.
+   *
+   * The handler belongs on the SVG root, not on the field rectangle: points and
+   * checkers are painted above the field and are its SIBLINGS, so a click on
+   * them never reaches it. Only passed when rolling is actually the move
+   * available, so it cannot fight with picking a checker up.
+   */
+  onFieldClick?: () => void
 }) {
   const inlayInset = (GEO.frame - GEO.inlayW) / 2
 
@@ -34,6 +45,9 @@ export function Board({
       className="h-auto w-full max-w-[min(95vw,calc(90vh*1.51))] select-none"
       role="img"
       aria-label="Backgammon board"
+      {...(onFieldClick
+        ? { onClick: onFieldClick, style: { cursor: 'pointer' } }
+        : {})}
     >
       <BoardDefs />
       <HomeSideProvider value={home}>

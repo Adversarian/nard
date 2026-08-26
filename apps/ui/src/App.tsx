@@ -8,6 +8,7 @@ import { installHarness, installPlayHarness } from './dev/harness'
 import { SCENES, sceneById, type Scene } from './dev/scenes'
 import { availableHops } from './game/draft'
 import { useAffordances, useGame } from './game/store'
+import { useKeyboard } from './game/useKeyboard'
 import type { OpponentConfig } from './game/opponent'
 import { Outcome } from './game/Outcome'
 import { Ladder } from './ladder/Ladder'
@@ -125,6 +126,14 @@ function PlayView() {
 
   const canRoll =
     isHumanTurn && (state.phase === 'to-roll' || state.phase === 'opening-roll')
+  const canDoubleNow = canRoll && canDouble(state)
+
+  useKeyboard({
+    ...(canRoll ? { roll: () => store.roll() } : {}),
+    ...(aff.canUndo ? { undo: () => store.undo() } : {}),
+    ...(canDoubleNow ? { double: () => store.double() } : {}),
+    escape: () => store.toLadder(),
+  })
   const facingDouble = state.phase === 'cube-offered' && isHumanTurn
 
   return (
@@ -168,7 +177,10 @@ function PlayView() {
             onLadder={() => store.toLadder()}
           />
         )}
-        <Board home={home}>
+        <Board
+          home={home}
+          {...(canRoll ? { onFieldClick: () => store.roll() } : {})}
+        >
           <AnimatedCheckers entities={entities} />
           {state.dice && (
             <>
@@ -216,9 +228,7 @@ function PlayView() {
               <Action onClick={() => store.passCube()}>{s.pass}</Action>
             </>
           )}
-          {canRoll && canDouble(state) && (
-            <Action onClick={() => store.double()}>{s.double}</Action>
-          )}
+          {canDoubleNow && <Action onClick={() => store.double()}>{s.double}</Action>}
 
         </div>
         <Pip label={s.you} value={n(pips.player)} />
