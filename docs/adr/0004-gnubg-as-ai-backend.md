@@ -45,8 +45,15 @@ Difficulty becomes "sample from the ranked candidate list weighted by `eqdiff`"
 - **Packaging.** A per-platform binary must be bundled as a Tauri sidecar (M4).
 - **Process supervision.** The bridge must survive crashes, restart cleanly, and
   the UI must degrade to `NetEvaluator` rather than break if the sidecar dies.
-- **Bearoff database.** The distro package omits the two-sided bearoff database
-  (`gnubg_ts0.bd`), which weakens bearoff play — exactly where an expert will
-  notice. Generate it with the bundled `makebearoff -t 6x6` and ship it.
+- **Bearoff database — unresolved.** The distro package omits the two-sided
+  bearoff database. Generating it works (`makebearoff -t 6x6 -f gnubg_ts0.bd`
+  produces a valid 6.8 MB file, header `gnubg-TS-06-06-1`, 853,776 entries), but
+  gnubg 1.07.001 still reports it "could not be found" with the file present in
+  `share/gnubg`, in `lib/gnubg`, and in the working directory, whether or not
+  `-P`/`-D` point at it. The one-sided database appears to be found by a path we
+  are not controlling either. Time-boxed and parked: bearoff play falls back to
+  the one-sided database and the neural net, which is good but not gnubg's
+  ceiling — and bearoff technique is precisely what a strong player scrutinises.
+  Worth an hour with the gnubg source before M4, not before.
 - Our own `NetEvaluator` is no longer critical path. It stays in scope as a
   fallback and as a possible future source of a more human-feeling ladder.

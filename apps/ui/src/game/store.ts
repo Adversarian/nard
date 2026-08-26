@@ -32,6 +32,17 @@ import {
   type Draft,
 } from './draft'
 import { SeededDiceSource } from './dice'
+import { decisionMaker } from './view'
+import {
+  chooseOpponentMove,
+  DEFAULT_OPPONENT,
+  HOP_GAP_MS,
+  opponentTakesDouble,
+  shouldOpponentDouble,
+  sleep,
+  THINK_FLOOR_MS,
+  type OpponentConfig,
+} from './opponent'
 
 interface GameStore {
   state: GameState
@@ -40,6 +51,22 @@ interface GameStore {
   selected: number | null
   rollNumber: number
   dice: SeededDiceSource
+
+  opponent: OpponentConfig
+  /** True while the opponent is deciding, for the UI to show a quiet marker. */
+  thinking: boolean
+  /** True when the strong engine was unavailable and play fell back. */
+  degraded: boolean
+  /** Re-entry guard for the opponent driver. */
+  busy: boolean
+  /**
+   * Skip the opponent's deliberate pacing. For automated playtests only — the
+   * pauses exist so a person can follow the move, and a script cannot.
+   */
+  fast: boolean
+  setFast(on: boolean): void
+  runOpponent(): Promise<void>
+  setOpponent(config: Partial<OpponentConfig>): void
 
   roll(): void
   select(point: number | null): void
@@ -59,6 +86,89 @@ const fresh = () => {
 export const useGame = create<GameStore>((set, get) => ({
   ...fresh(),
   dice: new SeededDiceSource(),
+  opponent: DEFAULT_OPPONENT,
+  thinking: false,
+  degraded: false,
+  busy: false,
+  fast: false,
+
+  setFast(on) {
+    set({ fast: on })
+  },
+
+  setOpponent(config) {
+    set({ opponent: { ...get().opponent, ...config } })
+  },
+
+  /**
+   * Drive the opponent until it is the player's turn again.
+   *
+   * A loop rather than one step per call, because a turn can span several
+   * phases (offer the cube, roll, move) and the player should see it run
+   * through them rather than needing something to poke it each time.
+   */
+  async runOpponent() {
+    const me = get().opponent.side
+    if (get().busy) return
+    set({ busy: true })
+    try {
+      for (let guard = 0; guard < 200; guard++) {
+        const { state, opponent } = get()
+
+        if (state.phase === 'cube-offered' && decisionMaker(state) === me) {
+          // The player doubled; the opponent answers.
+          set({ thinking: true })
+          const take = await opponentTakesDouble(state)
+          await sleep(get().fast ? 0 : THINK_FLOOR_MS)
+          set({ thinking: false })
+          take ? get().take() : get().passCube()
+          continue
+        }
+        if (decisionMaker(state) !== me) return
+        if (state.phase === 'game-over' || state.phase === 'match-over') return
+
+        if (state.phase === 'to-roll' || state.phase === 'opening-roll') {
+          if (state.phase === 'to-roll' && canDouble(state)) {
+            set({ thinking: true })
+            const doubles = await shouldOpponentDouble(state, opponent)
+            set({ thinking: false })
+            if (doubles) {
+              get().double()
+              return // the player now has a decision to make
+            }
+          }
+          get().roll()
+          await sleep(get().fast ? 0 : 220)
+          continue
+        }
+
+        if (state.phase === 'to-move') {
+          set({ thinking: true })
+          const started = Date.now()
+          const { move, degraded } = await chooseOpponentMove(state, opponent)
+          // A floor, not an addition: a slow evaluation does not stack on top.
+          const floor = get().fast ? 0 : THINK_FLOOR_MS
+          await sleep(Math.max(0, floor - (Date.now() - started)))
+          set({ thinking: false, degraded: get().degraded || degraded })
+
+          if (move === null) {
+            if (get().state === state) set({ state: passTurn(state) })
+            continue
+          }
+          // One checker at a time, so the player can see what was played.
+          for (const hop of move.hops) {
+            get().select(hop.from)
+            get().moveTo(hop.to)
+            await sleep(get().fast ? 0 : HOP_GAP_MS)
+          }
+          continue
+        }
+        return
+      }
+    } finally {
+      set({ busy: false, thinking: false })
+    }
+  },
 
   roll() {
     const { state, dice, rollNumber } = get()
@@ -148,8 +258,10 @@ export function useAffordances(): Affordances {
   const draft = useGame((s) => s.draft)
   const selected = useGame((s) => s.selected)
 
-  if (state.phase !== 'to-move') {
-    return { movable: [], destinations: [], canUndo: draft.hops.length > 0, anyPlay: false }
+  // The human plays light. During the opponent's turn there is nothing to click
+  // — without this the player could pick up and move the opponent's checkers.
+  if (state.phase !== 'to-move' || state.onRoll !== 'light') {
+    return { movable: [], destinations: [], canUndo: false, anyPlay: false }
   }
   const legal = legalMoves(state)
   return {
