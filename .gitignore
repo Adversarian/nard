@@ -39,3 +39,12 @@ venv/
 *.pt
 *.onnx
 checkpoints/
+
+# Playtest artifacts
+.shots/
+test-results/
+playwright-report/
+
+# Build output
+*.tsbuildinfo
+dist/
