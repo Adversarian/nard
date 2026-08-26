@@ -6,5 +6,9 @@
  */
 
 export * from './types.js'
-
-// Implementation lands in M1. See docs/rules-spec.md.
+export * from './dice.js'
+export * from './game.js'
+export * from './ids.js'
+export * from './moves.js'
+export * from './position.js'
+export * from './style.js'
