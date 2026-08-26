@@ -39,16 +39,26 @@ export interface Evaluator {
   dispose(): Promise<void>
 }
 
-export {
-  GnubgBridgeError,
-  type BridgeClientOptions,
-  type BridgeCommand,
-} from './bridge-client.js'
-export {
-  GnubgEvaluator,
-  type GnubgEvaluatorOptions,
-} from './gnubg.js'
-export { NetEvaluator, equityFromProbs, fallbackProbs } from './net.js'
+export interface EvaluatorOptions {
+  /** Disable graceful degradation for benchmarks that require the primary backend. */
+  readonly allowFallback?: boolean
+  readonly onBackendError?: (error: Error) => void
+}
+
+export async function createEvaluator(
+  options: EvaluatorOptions = {},
+): Promise<Evaluator> {
+  const { GnubgEvaluator } = await import('./gnubg.js')
+  const onBackendError =
+    options.onBackendError === undefined
+      ? {}
+      : { onBackendError: options.onBackendError }
+  return new GnubgEvaluator({
+    ...onBackendError,
+    ...(options.allowFallback === false ? { fallback: null } : {}),
+  })
+}
+
 export {
   chooseCube,
   chooseMove,

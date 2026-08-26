@@ -16,16 +16,18 @@ import { afterEach, describe, expect, it } from 'vitest'
 import {
   chooseCube,
   DIFFICULTIES,
-  GnubgEvaluator,
-  NetEvaluator,
   PERSONALITY_SAFETY_CLAMP,
-  equityFromProbs,
-  fallbackProbs,
   selectRankedMove,
   type Evaluator,
   type Personality,
   type RankedMove,
 } from './index.js'
+import { GnubgEvaluator } from './gnubg.js'
+import {
+  NetEvaluator,
+  equityFromProbs,
+  fallbackProbs,
+} from './net.js'
 
 const fixture = fileURLToPath(new URL('../test/fake-bridge.mjs', import.meta.url))
 const opening = standardPosition()

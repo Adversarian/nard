@@ -13,8 +13,8 @@ import {
   type Position,
 } from '../packages/engine/src/index.js'
 import {
+  createEvaluator,
   DIFFICULTIES,
-  GnubgEvaluator,
   PERSONALITY_SAFETY_CLAMP,
   selectRankedMove,
   type DifficultyRung,
@@ -238,7 +238,7 @@ function assertMonotonic(results: readonly RungResult[]): void {
 const minimumGames = integerArgument('games', DEFAULT_GAMES)
 const minimumDecisions = integerArgument('decisions', DEFAULT_DECISIONS)
 const seed = integerArgument('seed', DEFAULT_SEED)
-const evaluator = new GnubgEvaluator({ fallback: null })
+const evaluator = await createEvaluator({ allowFallback: false })
 const stats: Record<DifficultyRung, RungStats> = {
   1: { decisions: 0, equityLost: 0 },
   2: { decisions: 0, equityLost: 0 },

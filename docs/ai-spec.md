@@ -23,6 +23,10 @@ interface RankedMove {
 }
 ```
 
+Consumers obtain this abstraction through `createEvaluator()`. Backend classes,
+process options and fallback implementation details are not exported from the
+package entrypoint.
+
 Backends:
 
 - **`GnubgEvaluator`** — default. Long-lived `gnubg -q -t -r -p bridge.py`
@@ -46,7 +50,9 @@ starts a fresh child.
 
 For checker play, the bridge sets gnubg's move filters to keep every legal move
 at the requested ply. Mixed-depth candidate lists are not valid input to the
-difficulty sampler.
+difficulty sampler. Because `rankMoves` currently carries no cube, score or
+match-rule context, these isolated checker evaluations use money play with
+Jacoby off, matching the engine's default money-play rule.
 
 GNU Backgammon 1.07.001's embedded Python `hint()` reports checker plays but
 raises for cube actions. Cube decisions therefore use the supported
