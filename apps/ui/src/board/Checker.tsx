@@ -1,4 +1,5 @@
 import { CHECKER_R } from './geometry'
+import { MirrorText } from './MirrorText'
 
 export type Side = 'light' | 'dark'
 
@@ -77,7 +78,7 @@ export function CountChip({ x, y, n }: { x: number; y: number; n: number }) {
   return (
     <g>
       <circle cx={x} cy={y} r={CHECKER_R * 0.46} fill="var(--inlay)" />
-      <text
+      <MirrorText
         x={x}
         y={y}
         textAnchor="middle"
@@ -87,7 +88,7 @@ export function CountChip({ x, y, n }: { x: number; y: number; n: number }) {
         fill="var(--app-bg)"
       >
         {n}
-      </text>
+      </MirrorText>
     </g>
   )
 }

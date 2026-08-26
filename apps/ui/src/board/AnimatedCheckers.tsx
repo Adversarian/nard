@@ -2,7 +2,7 @@ import { memo, useEffect, useRef, useState } from 'react'
 import { motion } from 'motion/react'
 import { Checker } from './Checker'
 import { layout, type CheckerEntity } from './entities'
-import { CHECKER_R, type HomeSide } from './geometry'
+import { CHECKER_R } from './geometry'
 import type { SoundEvent } from '../sound/manifest'
 import { sound } from '../sound/player'
 
@@ -103,20 +103,14 @@ const AnimatedChecker = memo(function AnimatedChecker({
   )
 })
 
-export function AnimatedCheckers({
-  entities,
-  home = 'right',
-}: {
-  entities: readonly CheckerEntity[]
-  home?: HomeSide
-}) {
+export function AnimatedCheckers({ entities }: { entities: readonly CheckerEntity[] }) {
   const reduced =
     typeof matchMedia !== 'undefined' &&
     matchMedia('(prefers-reduced-motion: reduce)').matches
 
   // Paint low checkers first so a checker higher on a point overlaps the one
   // beneath it, rather than being hidden by it.
-  const placements = [...layout(entities, home)].sort((a, b) => a.z - b.z)
+  const placements = [...layout(entities)].sort((a, b) => a.z - b.z)
 
   return (
     <g>

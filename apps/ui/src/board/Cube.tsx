@@ -1,3 +1,5 @@
+import { MirrorText } from './MirrorText'
+
 /** The doubling cube. Brass-edged bone, showing the current stake. */
 export function Cube({
   x,
@@ -31,7 +33,7 @@ export function Cube({
         stroke="var(--inlay)"
         strokeWidth="0.026"
       />
-      <text
+      <MirrorText
         x={x}
         y={y}
         textAnchor="middle"
@@ -41,7 +43,7 @@ export function Cube({
         fill="var(--checker-dark)"
       >
         {value}
-      </text>
+      </MirrorText>
     </g>
   )
 }

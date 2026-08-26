@@ -11,7 +11,7 @@
  */
 
 import type { Side } from './Checker'
-import { barCentre, checkerCentre, offSlab, stackSpacing, type HomeSide } from './geometry'
+import { barCentre, checkerCentre, offSlab, stackSpacing } from './geometry'
 
 /** Where a checker is. `point` is on-roll-relative 1..24 (AGENTS.md §5). */
 export type Loc =
@@ -65,10 +65,7 @@ export interface Placement {
  * Resolve every entity to a coordinate. Pure — same entities in, same layout
  * out, which is what makes motion traces reproducible.
  */
-export function layout(
-  entities: readonly CheckerEntity[],
-  home: HomeSide = 'right',
-): Placement[] {
+export function layout(entities: readonly CheckerEntity[]): Placement[] {
   const byPoint = new Map<number, CheckerEntity[]>()
   const bar: Record<'on' | 'opp', CheckerEntity[]> = { on: [], opp: [] }
   const offs: Record<'on' | 'opp', CheckerEntity[]> = { on: [], opp: [] }
@@ -85,7 +82,7 @@ export function layout(
   const out: Placement[] = []
   for (const [point, list] of byPoint) {
     list.forEach((entity, k) => {
-      const c = checkerCentre(point, k, list.length, home)
+      const c = checkerCentre(point, k, list.length)
       out.push({ entity, x: c.x, y: c.y, z: k })
     })
   }

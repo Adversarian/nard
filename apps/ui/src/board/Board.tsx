@@ -1,4 +1,5 @@
 import { BoardDefs } from './Defs'
+import { HomeSideProvider } from './HomeSide'
 import {
   BOARD_H,
   BOARD_W,
@@ -35,8 +36,21 @@ export function Board({
       aria-label="Backgammon board"
     >
       <BoardDefs />
+      <HomeSideProvider value={home}>
 
-      <g filter="url(#board-shadow)">
+      {/*
+        `home: 'left'` mirrors the ENTIRE case, so the bear-off tray travels with
+        the home board it belongs beside. Mirroring only the point columns leaves
+        the tray stranded on the far side, which is wrong on any real board.
+        The two pieces of text inside (the cube value, stack count chips)
+        counter-mirror themselves — see MirrorText.
+      */}
+      <g
+        filter="url(#board-shadow)"
+        {...(home === 'left'
+          ? { transform: `translate(${BOARD_W} 0) scale(-1 1)` }
+          : {})}
+      >
         {/* case */}
         <rect
           x="0"
@@ -122,7 +136,7 @@ export function Board({
         <g>
           {Array.from({ length: 24 }, (_, i) => {
             const p = i + 1
-            const g = pointGeom(p, home)
+            const g = pointGeom(p)
             // Alternate by board column so neighbours always differ, and the
             // pattern stays symmetric across the bar.
             const a = p % 2 === 1
@@ -225,6 +239,7 @@ export function Board({
 
         {children}
       </g>
+      </HomeSideProvider>
     </svg>
   )
 }
