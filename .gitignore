@@ -1,0 +1,41 @@
+# OS
+.DS_Store
+Thumbs.db
+
+# Editors
+.vscode/
+.idea/
+*.swp
+
+# Node
+node_modules/
+dist/
+build/
+out/
+.vite/
+*.log
+npm-debug.log*
+pnpm-debug.log*
+yarn-error.log*
+
+# Rust / Tauri
+target/
+**/*.rs.bk
+
+# Python (training / tooling)
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.ipynb_checkpoints/
+
+# Env
+.env
+.env.local
+.env.*.local
+
+# Model artifacts
+*.ckpt
+*.pt
+*.onnx
+checkpoints/
