@@ -1,6 +1,6 @@
 import { memo, useEffect, useRef, useState } from 'react'
 import { motion } from 'motion/react'
-import { Checker } from './Checker'
+import { Checker, Slab } from './Checker'
 import { layout, type CheckerEntity } from './entities'
 import { CHECKER_R } from './geometry'
 import type { SoundEvent } from '../sound/manifest'
@@ -98,7 +98,11 @@ const AnimatedChecker = memo(function AnimatedChecker({
       }}
       style={{ transformBox: 'fill-box', transformOrigin: 'center' }}
     >
-      <Checker side={entity.side} />
+      {entity.loc.kind === 'off' ? (
+        <Slab side={entity.side} />
+      ) : (
+        <Checker side={entity.side} />
+      )}
     </motion.g>
   )
 })

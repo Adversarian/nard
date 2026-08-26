@@ -1,4 +1,4 @@
-import { CHECKER_R } from './geometry'
+import { CHECKER_R, GEO } from './geometry'
 import { MirrorText } from './MirrorText'
 
 export type Side = 'light' | 'dark'
@@ -10,6 +10,42 @@ export type Side = 'light' | 'dark'
  * docs/design-language.md. Without it they go dark-on-dark against the cypress
  * points. Check contrast before removing it.
  */
+/**
+ * A borne-off checker, lying flat in the tray.
+ *
+ * Checkers in the tray are stacked far tighter than on a point, so drawing them
+ * as discs makes an overlapping smear. Lying flat is also what they actually do
+ * on a real board.
+ */
+export function Slab({ side }: { side: Side }) {
+  const light = side === 'light'
+  const w = GEO.trayW * 0.8
+  const h = GEO.checkerD * 0.26
+  return (
+    <g>
+      <rect
+        x={-w / 2}
+        y={-h / 2}
+        width={w}
+        height={h}
+        rx={h / 2.4}
+        fill={light ? 'var(--checker-light)' : 'var(--checker-dark)'}
+      />
+      <rect
+        x={-w / 2}
+        y={-h / 2}
+        width={w}
+        height={h}
+        rx={h / 2.4}
+        fill="none"
+        stroke={light ? 'var(--checker-light-edge)' : 'var(--checker-dark-rim)'}
+        strokeWidth="0.012"
+        strokeOpacity="0.85"
+      />
+    </g>
+  )
+}
+
 export function Checker({ side }: { side: Side }) {
   const r = CHECKER_R
   const light = side === 'light'
