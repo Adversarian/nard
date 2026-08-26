@@ -8,8 +8,7 @@
  *   pnpm sound
  */
 import { chromium } from '@playwright/test'
-
-const BASE = process.env.NARD_URL ?? 'http://localhost:5173'
+import { startMatch } from './harness.js'
 
 const browser = await chromium.launch({
   channel: 'chrome',
@@ -17,9 +16,8 @@ const browser = await chromium.launch({
   args: ['--autoplay-policy=no-user-gesture-required'],
 })
 const page = await browser.newPage({ viewport: { width: 1100, height: 720 } })
-await page.goto(BASE, { waitUntil: 'networkidle' })
-await page.waitForFunction(() => '__nard' in globalThis)
-await page.evaluate('__nard.fast(true)')
+// Without this the harness measures the opponent ladder and reports no sound.
+await startMatch(page, { opponent: 'mehrdad', matchLength: 7, volume: 0.7 })
 await page.mouse.click(20, 20) // unlock audio
 await page.waitForTimeout(600)
 

@@ -11,8 +11,8 @@
  *   pnpm playtest 5          # five
  */
 import { chromium } from '@playwright/test'
+import { startMatch } from './harness.js'
 
-const BASE = process.env.NARD_URL ?? 'http://localhost:5173'
 const games = Number(process.argv[2] ?? 1)
 
 const browser = await chromium.launch({ channel: 'chrome' })
@@ -24,13 +24,9 @@ page.on('console', (m) => {
   if (m.type() === 'error') errors.push(`CONSOLE: ${m.text()}`)
 })
 
-await page.goto(BASE, { waitUntil: 'networkidle' })
-await page.waitForFunction(() => '__nard' in globalThis)
 // Automated runs skip the opponent's deliberate pauses; those exist so a person
 // can follow the move, and they turn a two-minute game into a twenty-minute one.
-await page.evaluate('__nard.fast(true)')
-// The app opens on the ladder now; pick an opponent to get a board.
-await page.evaluate("__nard.start('mehrdad', 1)")
+await startMatch(page, { opponent: 'mehrdad', matchLength: 1 })
 
 for (let g = 1; g <= games; g++) {
   const result = await page.evaluate<{
@@ -79,13 +75,11 @@ for (let g = 1; g <= games; g++) {
   )
   if (result.stalled) console.log(`  state: ${result.stalled}`)
 
-  if (result.phase === 'game-over') {
-    await page.evaluate(`__nard.state()`) // keep the harness fresh
-    await page.reload({ waitUntil: 'networkidle' })
-    await page.waitForFunction(() => '__nard' in globalThis)
-// Automated runs skip the opponent's deliberate pauses; those exist so a person
-// can follow the move, and they turn a two-minute game into a twenty-minute one.
-await page.evaluate('__nard.fast(true)')
+  // A one-point match ends at 'match-over', not 'game-over'. Reloading only on
+  // the latter left every game after the first reading an already-finished
+  // board and reporting a result it had not played.
+  if (result.phase === 'game-over' || result.phase === 'match-over') {
+    await startMatch(page, { opponent: 'mehrdad', matchLength: 1 })
   }
 }
 
