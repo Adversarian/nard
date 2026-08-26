@@ -177,7 +177,7 @@ defaults to on, single volume control, and is silent when the window is unfocuse
 ## Textures
 
 The wood grain, felt, and khatam inlay band are generated assets, produced with
-the `torob-ai-sub-image-generation` skill and committed as optimised WebP under
+`gpt-image-2` and committed as optimised WebP under
 `apps/ui/src/assets/textures/`. They are tiled and tinted with the tokens above
 rather than baked at final colour, so themes stay swappable. Keep each under
 80 KB; this is a desktop app, not a texture demo.
