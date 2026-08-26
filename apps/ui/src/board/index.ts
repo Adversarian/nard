@@ -1,6 +1,6 @@
 export { Board } from './Board'
 export { AnimatedCheckers } from './AnimatedCheckers'
-export { Checker, CountChip, type Side } from './Checker'
+export { Checker, CountChip, Slab, type Side } from './Checker'
 export { Die, RolledDie } from './Dice'
 export { Cube } from './Cube'
 export * from './geometry'

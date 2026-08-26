@@ -9,6 +9,7 @@ import { SCENES, sceneById, type Scene } from './dev/scenes'
 import { availableHops } from './game/draft'
 import { useAffordances, useGame } from './game/store'
 import type { OpponentConfig } from './game/opponent'
+import { Outcome } from './game/Outcome'
 import { Ladder } from './ladder/Ladder'
 import { opponentById } from './ladder/opponents'
 import { decisionMaker, reconcile, toAbsolute } from './game/view'
@@ -157,7 +158,16 @@ function PlayView() {
         </span>
       </header>
 
-      <main className="flex flex-1 items-center justify-center px-6">
+      <main className="relative flex flex-1 items-center justify-center px-6">
+        {(state.phase === 'game-over' || state.phase === 'match-over') && (
+          <Outcome
+            state={state}
+            lang={lang}
+            opponentId={store.opponentId}
+            onNext={() => store.nextGame()}
+            onLadder={() => store.toLadder()}
+          />
+        )}
         <Board home={home}>
           <AnimatedCheckers entities={entities} />
           {state.dice && (
@@ -209,16 +219,7 @@ function PlayView() {
           {canRoll && canDouble(state) && (
             <Action onClick={() => store.double()}>{s.double}</Action>
           )}
-          {state.phase === 'game-over' && (
-            <Action onClick={() => store.nextGame()}>
-              {state.result?.winner === 'light' ? s.youWin : s.theyWin} {n(state.result?.points ?? 0)}
-              {state.result?.kind === 'gammon' ? ` (${s.gammon})` : ''}
-              {state.result?.kind === 'backgammon' ? ` (${s.backgammon})` : ''} · {s.nextGame}
-            </Action>
-          )}
-          {state.phase === 'match-over' && (
-            <span style={{ color: 'var(--text)' }}>{s.matchOver}</span>
-          )}
+
         </div>
         <Pip label={s.you} value={n(pips.player)} />
       </footer>
