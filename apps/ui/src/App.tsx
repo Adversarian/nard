@@ -1,5 +1,8 @@
-import { useEffect } from 'react'
-import { Board, Checkers, Cube, Die, FIELD_X, FIELD_Y, GEO } from './board'
+import { useEffect, useState } from 'react'
+import { Board, Cube, Die, FIELD_X, FIELD_Y, GEO } from './board'
+import { AnimatedCheckers } from './board/AnimatedCheckers'
+import { entitiesFrom, type CheckerEntity } from './board/entities'
+import { installHarness } from './dev/harness'
 import { SCENES, sceneById, type Scene } from './dev/scenes'
 
 type Theme = 'khatam' | 'tournament' | 'kaghaz'
@@ -33,6 +36,15 @@ function pips(pts: readonly number[], own: boolean): number {
 
 function BoardWithPieces({ scene }: { scene: Scene }) {
   const lang = scene.lang ?? 'en'
+  const [entities, setEntities] = useState<CheckerEntity[]>(() =>
+    entitiesFrom(scene.pts, scene.off, scene.oppOff),
+  )
+
+  // Dev-only control surface, so scripts (and agents) can drive the board
+  // deterministically instead of hunting for click targets.
+  useEffect(() => {
+    if (import.meta.env.DEV) installHarness(entities, setEntities)
+  }, [entities])
   // Dice are thrown into the right-hand half, on the roller's side of the bar.
   const rightHalfCx = FIELD_X + 6 * GEO.u + GEO.barW + 3 * GEO.u
   const diceY = FIELD_Y + GEO.innerH * 0.5
@@ -46,7 +58,7 @@ function BoardWithPieces({ scene }: { scene: Scene }) {
 
   return (
     <Board>
-      <Checkers pts={scene.pts} off={scene.off} oppOff={scene.oppOff} />
+      <AnimatedCheckers entities={entities} />
       {scene.dice && (
         <>
           <Die x={rightHalfCx - 0.62} y={diceY} value={scene.dice[0]} size={0.82} />

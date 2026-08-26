@@ -33,11 +33,13 @@ cube decisions at score match gnubg's.
 ## M4 — It looks and ships like a real thing
 
 Full visual treatment per `design-language.md`, all three themes, Persian/RTL,
-sound, motion. Tauri shell, gnubg sidecar packaged, bearoff DB generated.
+motion, and **sound** (`sound-spec.md`). Tauri shell, gnubg sidecar packaged,
+bearoff DB generated.
 
 **Exit:** it installs and runs on the target machine with no toolchain present,
-and every scene in the gallery looks right in all three themes and both
-languages.
+every scene in the gallery looks right in all three themes and both languages,
+`pnpm motion` reports every interaction in spec, and `pnpm sound` reports every
+event firing once, at contact, with sample variation.
 
 ## M5 — Analysis
 

@@ -13,6 +13,7 @@ it, don't leave them out of sync.
 | [ai-spec.md](ai-spec.md) | Evaluator, search, difficulty ladder, personalities |
 | [analysis-spec.md](analysis-spec.md) | Equity loss, PR scoring, luck/skill split, drills |
 | [dice-fairness.md](dice-fairness.md) | The commit–reveal protocol and how a player verifies it |
+| [sound-spec.md](sound-spec.md) | The sound set, and how it is verified without hearing it |
 | [playtesting.md](playtesting.md) | How an agent runs, sees, and plays the game |
 | [roadmap.md](roadmap.md) | Milestones, in order, with exit criteria |
 | [adr/](adr/) | Why things are the way they are. Append-only. |

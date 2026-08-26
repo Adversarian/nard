@@ -9,11 +9,27 @@ export type Side = 'light' | 'dark'
  * docs/design-language.md. Without it they go dark-on-dark against the cypress
  * points. Check contrast before removing it.
  */
-export function Checker({ x, y, side }: { x: number; y: number; side: Side }) {
+export function Checker({ side }: { side: Side }) {
   const r = CHECKER_R
   const light = side === 'light'
+  const x = 0
+  const y = 0
   return (
-    <g filter="url(#checker-shadow)">
+    <g>
+      {/*
+        Drawn shadow, NOT filter="url(#checker-shadow)". An feDropShadow forces
+        the browser to re-run the filter every frame the group is transformed;
+        with 30 checkers on the board that dropped animation to ~17fps. An
+        ellipse is free. Measured with `pnpm motion` — see the frame-pacing line.
+      */}
+      <ellipse
+        cx={x + r * 0.05}
+        cy={y + r * 0.16}
+        rx={r * 0.96}
+        ry={r * 0.9}
+        fill="#000"
+        opacity="0.45"
+      />
       <circle cx={x} cy={y} r={r} fill={`url(#checker-${side})`} />
       <circle
         cx={x}

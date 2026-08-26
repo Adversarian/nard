@@ -15,6 +15,7 @@
     "shots": "tsx tools/shots.ts",
     "selfplay": "tsx tools/selfplay.ts",
     "difftest": "tsx tools/difftest.ts",
+    "motion": "tsx tools/motion.ts",
     "check": "pnpm typecheck && pnpm test"
   },
   "devDependencies": {

@@ -137,7 +137,7 @@ never blocks input, and is always interruptible.
 | Interaction | Spec |
 | --- | --- |
 | Checker lift (pick up) | `110ms cubic-bezier(.2,.8,.3,1)`, scale → `1.05`, y `-2px`, shadow blur `3 → 14px` |
-| Checker travel | spring `{ stiffness: 420, damping: 34, mass: 0.9 }` (~260ms settle) |
+| Checker travel | spring `{ stiffness: 420, damping: 28, mass: 0.9 }` — ζ 0.72, ~4% overshoot, ~260ms settle |
 | Checker drop | scale `1.05 → 1` over `90ms`, shadow contracts |
 | Checker hit → bar | travel spring + `8°` rotation, slight arc, `320ms` |
 | Dice roll | three tumbles over `380ms`, land with `6%` overshoot |
@@ -147,6 +147,26 @@ never blocks input, and is always interruptible.
 Use `motion` for springs, layout and exit animations. Use plain CSS transitions
 for simple hovers and fades — pulling in a spring for an opacity change is
 overkill.
+
+### Tune springs with the physics, not by feel
+
+A spring is fully described by stiffness `k`, mass `m` and damping `c`. What you
+actually care about follows from them:
+
+```
+damping ratio   ζ = c / (2·√(k·m))
+overshoot       ≈ exp(−πζ / √(1−ζ²))
+settle time     ≈ 4 / (ζ·√(k/m))
+```
+
+The checker travel spring targets **ζ ≈ 0.72** — enough overshoot to feel like a
+physical object with weight being set down, not enough to wobble. The first implementation
+used `damping: 34`, which is ζ 0.87: almost critically damped, 0.3% overshoot,
+and it settled 50ms early. Nobody noticed by eye; `pnpm motion` measured it.
+
+**So: change these numbers only with `pnpm motion` in front of you.** It reports
+measured overshoot and settle time against the spec, which is the whole reason
+those values are stated here as numbers rather than adjectives.
 
 **`prefers-reduced-motion`:** every entry above degrades to a `120ms` linear
 opacity change with no transform. This is not optional and is checked in review.
