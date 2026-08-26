@@ -79,6 +79,9 @@ pnpm test              # vitest, all packages
 pnpm typecheck         # tsc -b across the workspace
 pnpm check             # typecheck + test — run before every commit
 pnpm shots             # capture the visual gallery to .shots/ (see §6)
+pnpm motion            # measure animations against the spec (see §6)
+pnpm playtest          # play complete games through the real UI
+pnpm difftest          # engine move generation vs. gnubg
 pnpm selfplay          # headless AI-vs-AI benchmark
 ```
 
