@@ -16,7 +16,11 @@ concurrency:
 jobs:
   build:
     runs-on: windows-latest
-    timeout-minutes: 60
+    # 120, not 60. A cold runner compiles Tauri's whole crate tree from
+    # scratch and the very first build overran 60 minutes and was cancelled.
+    # Warm builds finish in about ten; this is headroom for the cold one, not
+    # an expectation.
+    timeout-minutes: 120
     env:
       NARD_GNUBG_CACHE_DIR: ${{ github.workspace }}\.cache\gnubg
 

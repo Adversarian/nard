@@ -54,4 +54,10 @@ same platform seam exposes resolved app-data paths; no component constructs a
 Windows filesystem path.
 
 Linux development compiles the shell and IPC wiring but is not a release path.
+
+**Do not build the desktop app locally to "check it compiles".** A local Tauri
+build pulls roughly 207MB of Rust crates and leaves a 2.2GB `target/`
+directory, on a metered connection, to prove something the Windows workflow
+proves properly. Windows artifacts are verified in CI. If the shell will not
+compile, CI says so within minutes and costs nobody any bandwidth.
 The installer is built natively on a `windows-latest` GitHub Actions runner.

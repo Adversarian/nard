@@ -76,10 +76,26 @@ export const evaluator: UiEvaluator = {
   async cubeDecision(pos, cube) {
     if (isTauri()) {
       try {
+        /*
+         * These defaults deliberately mirror what the browser path produces.
+         * The dev transport posts to /api/eval, which calls the evaluator with
+         * no EvaluationContext, so the AI package fills in money play, a level
+         * score and no Crawford. Sending anything different here would make the
+         * packaged app and the dev app disagree about cube decisions — the one
+         * thing the platform seam exists to prevent.
+         *
+         * When the UI starts carrying match context to the evaluator, both
+         * paths get it together.
+         */
         const params: CubeDecisionRequest = {
           positionId: encodePositionId(pos),
           cubeValue: cube.value,
-          cubeOwned: cube.owner !== null,
+          cubeOwner: cube.owner === null ? -1 : 1,
+          matchLength: 0,
+          score: [0, 0],
+          crawford: false,
+          jacoby: false,
+          plies: 1,
         }
         const result = await invokeTauri<CubeDecisionResponse>('evaluate', {
           request: { method: 'cube_decision', params },
