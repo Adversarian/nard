@@ -5,7 +5,14 @@
  * See docs/ai-spec.md.
  */
 
-import type { CubeState, Dice, Move, Position } from '@nard/engine'
+import type {
+  CubeState,
+  Dice,
+  MatchState,
+  Move,
+  PlayerId,
+  Position,
+} from '@nard/engine'
 
 /** [win, win-gammon, win-backgammon, lose-gammon, lose-backgammon] */
 export type Probs = readonly [number, number, number, number, number]
@@ -30,11 +37,23 @@ export interface CubeAnalysis {
 export interface EvalOpts {
   /** Search depth. 0 and 1 are fast; 2 is for the top rungs and analysis. */
   readonly plies?: 0 | 1 | 2
+  /** Match context required for cubeful, score-aware analysis. */
+  readonly context?: EvaluationContext
+}
+
+export interface EvaluationContext {
+  readonly cube: CubeState
+  readonly match: MatchState
+  readonly onRoll: PlayerId
 }
 
 export interface Evaluator {
   rankMoves(pos: Position, dice: Dice, opts?: EvalOpts): Promise<RankedMove[]>
-  cubeDecision(pos: Position, cube: CubeState): Promise<CubeAnalysis>
+  cubeDecision(
+    pos: Position,
+    cube: CubeState,
+    opts?: EvalOpts,
+  ): Promise<CubeAnalysis>
   /** Release the backend (e.g. terminate the gnubg child process). */
   dispose(): Promise<void>
 }

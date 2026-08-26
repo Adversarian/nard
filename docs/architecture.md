@@ -129,8 +129,14 @@ runtime, any state library besides zustand.
 
 Local files only, in the OS app-data directory:
 
-- `matches/*.json` — every match played, as `{seed, commitment, moves, meta}`.
-  Small, replayable, and the input to all analysis.
+- `matches/*.json` — every match played, as
+  `{v: 1, seed, commitment, decisions, meta}`. Decisions are the engine
+  transitions (`roll`, `move`, forced pass, cube actions and game boundary);
+  rolls contain no dice because `(seed, rollNumber)` derives them exactly.
+  Checker moves store the GNU Position ID of the resulting position rather
+  than depending on notation remaining canonical forever. `meta` contains the
+  initial match/rules setup, timestamps supplied by the host, and optional
+  player names. Small, replayable, and the input to all analysis.
 - `profile.json` — PR history, ladder progress, settings, theme.
 - `drills.json` — spaced-repetition state for positions he got wrong.
 

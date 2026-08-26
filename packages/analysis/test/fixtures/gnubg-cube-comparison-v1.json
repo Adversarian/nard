@@ -1,0 +1,44 @@
+{
+  "v": 1,
+  "seed": "030c151e273039424b545d666f78818a939ca5aeb7c0c9d2dbe4edf6ff08111a",
+  "commitment": "04ded1e3299c979ec2a6905163408b8422dcab8699ffd51175d8d9a2351b9e78",
+  "decisions": [
+    {
+      "kind": "roll"
+    },
+    {
+      "kind": "move",
+      "positionId": "4HPwATDCV/ABMA"
+    },
+    {
+      "kind": "double"
+    },
+    {
+      "kind": "drop"
+    }
+  ],
+  "meta": {
+    "startedAt": "2026-08-26T11:00:00.000Z",
+    "match": {
+      "length": 3,
+      "score": {
+        "light": 0,
+        "dark": 0
+      },
+      "crawfordUsed": false,
+      "jacoby": false
+    },
+    "rules": {
+      "variant": "standard",
+      "automaticDoubles": false
+    },
+    "players": {
+      "light": {
+        "name": "Cube Light"
+      },
+      "dark": {
+        "name": "Cube Dark"
+      }
+    }
+  }
+}

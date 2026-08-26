@@ -5,6 +5,7 @@ import { fileURLToPath } from 'node:url'
 
 import {
   applyMove,
+  createMatchState,
   encodePositionId,
   generateLegalMoves,
   standardPosition,
@@ -284,5 +285,22 @@ it.skipIf(!existsSync(liveBinary))(
     expect(result.every(({ eqdiff }) => eqdiff <= 0)).toBe(true)
     expect(['no-double', 'double', 'too-good']).toContain(cube.action)
     expect(['take', 'pass']).toContain(cube.response)
+
+    const deadCubeContext = {
+      cube: { value: 1, owner: null },
+      match: createMatchState({ length: 1 }),
+      onRoll: 'light' as const,
+    }
+    const matchResult = await evaluator.rankMoves(opening, openingDice, {
+      plies: 0,
+      context: deadCubeContext,
+    })
+    const deadCube = await evaluator.cubeDecision(
+      opening,
+      deadCubeContext.cube,
+      { plies: 0, context: deadCubeContext },
+    )
+    expect(matchResult).toHaveLength(result.length)
+    expect(deadCube.action).toBe('no-double')
   },
 )

@@ -10,7 +10,7 @@ interface Evaluator {
   /** Every legal move, ranked best-first, with equity and equity loss. */
   rankMoves(pos: Position, dice: Dice, opts?: EvalOpts): Promise<RankedMove[]>
   /** Double / take / pass, with equities for each. */
-  cubeDecision(pos: Position, cube: CubeState): Promise<CubeAnalysis>
+  cubeDecision(pos: Position, cube: CubeState, opts?: EvalOpts): Promise<CubeAnalysis>
   /** Release the backend process or other resources. */
   dispose(): Promise<void>
 }
@@ -22,6 +22,13 @@ interface RankedMove {
   probs: Probs        // [win, winG, winBG, loseG, loseBG]
 }
 ```
+
+`EvalOpts.context` optionally carries `{cube, match, onRoll}`. Gameplay callers
+may omit it and retain the previous money-play behaviour. Analysis supplies it:
+the bridge applies the resulting GNU Match ID for checker hints and passes the
+score, Crawford/Jacoby state and cube owner to `cfevaluate`. Without this
+context, a cubeful equity at match score is not the equity of the recorded
+decision.
 
 Consumers obtain this abstraction through `createEvaluator()`. Backend classes,
 process options and fallback implementation details are not exported from the
@@ -50,9 +57,8 @@ starts a fresh child.
 
 For checker play, the bridge sets gnubg's move filters to keep every legal move
 at the requested ply. Mixed-depth candidate lists are not valid input to the
-difficulty sampler. Because `rankMoves` currently carries no cube, score or
-match-rule context, these isolated checker evaluations use money play with
-Jacoby off, matching the engine's default money-play rule.
+difficulty sampler. Calls without `EvalOpts.context` use money play with Jacoby
+off; match analysis always supplies context.
 
 GNU Backgammon 1.07.001's embedded Python `hint()` reports checker plays but
 raises for cube actions. Cube decisions therefore use the supported

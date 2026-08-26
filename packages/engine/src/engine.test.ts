@@ -14,6 +14,7 @@ import {
   encodeMatchId,
   encodePositionId,
   generateLegalMoves,
+  hmacSha256,
   mirror,
   passTurn,
   passDouble,
@@ -21,6 +22,7 @@ import {
   playMove,
   positionEquals,
   rollGame,
+  sha256,
   standardPosition,
   startNextGame,
   styleFeatures,
@@ -329,7 +331,7 @@ describe('style features and deterministic dice', () => {
       },
     }
     const seed = new Uint8Array(32).map((_, index) => index)
-    const first = new CommitRevealDiceSource(seed, hashes)
+    const first = new CommitRevealDiceSource(seed)
     const second = new CommitRevealDiceSource(seed, hashes)
 
     expect(Array.from({ length: 100 }, (_, index) => first.roll(index))).toEqual(
@@ -338,8 +340,10 @@ describe('style features and deterministic dice', () => {
 
     const rejectionSource = new CommitRevealDiceSource(seed, {
       sha256: hashes.sha256,
-      hmacSha256() {
-        return Uint8Array.from([252, 255, 0, 251])
+      hmacSha256(_key, message) {
+        return String.fromCharCode(...message).endsWith(':1')
+          ? Uint8Array.from([0, 251])
+          : Uint8Array.from([252, 255])
       },
     })
     expect(rejectionSource.roll(0)).toEqual([1, 6] satisfies [Die, Die])
@@ -348,5 +352,55 @@ describe('style features and deterministic dice', () => {
     expect(verifyDiceCommitment(seed, commitment, hashes)).toBe(true)
     commitment[0] = (commitment[0] ?? 0) ^ 1
     expect(verifyDiceCommitment(seed, commitment, hashes)).toBe(false)
+  })
+
+  it('matches published SHA-256 vectors', () => {
+    const bytes = (text: string) => new TextEncoder().encode(text)
+    const hex = (value: Uint8Array) =>
+      [...value].map((byte) => byte.toString(16).padStart(2, '0')).join('')
+
+    expect(hex(sha256(bytes('')))).toBe(
+      'e3b0c44298fc1c149afbf4c8996fb924' +
+        '27ae41e4649b934ca495991b7852b855',
+    )
+    expect(hex(sha256(bytes('abc')))).toBe(
+      'ba7816bf8f01cfea414140de5dae2223' +
+        'b00361a396177a9cb410ff61f20015ad',
+    )
+  })
+
+  it('matches RFC 4231 HMAC-SHA-256 vectors, including a long key', () => {
+    const bytes = (text: string) => new TextEncoder().encode(text)
+    const repeat = (byte: number, length: number) =>
+      new Uint8Array(length).fill(byte)
+    const hex = (value: Uint8Array) =>
+      [...value].map((byte) => byte.toString(16).padStart(2, '0')).join('')
+
+    expect(hex(hmacSha256(repeat(0x0b, 20), bytes('Hi There')))).toBe(
+      'b0344c61d8db38535ca8afceaf0bf12b' +
+        '881dc200c9833da726e9376c2e32cff7',
+    )
+    expect(
+      hex(
+        hmacSha256(
+          bytes('Jefe'),
+          bytes('what do ya want for nothing?'),
+        ),
+      ),
+    ).toBe(
+      '5bdcc146bf60754e6a042426089575c7' +
+        '5a003f089d2739839dec58b964ec3843',
+    )
+    expect(
+      hex(
+        hmacSha256(
+          repeat(0xaa, 131),
+          bytes('Test Using Larger Than Block-Size Key - Hash Key First'),
+        ),
+      ),
+    ).toBe(
+      '60e431591ee0b67f0d8a26aacbf5b77f' +
+        '8e0bc6213728c5140546040f0ee37f54',
+    )
   })
 })
