@@ -13,10 +13,14 @@ Commit–reveal. Before a match begins:
 3. Play the entire match. Roll `n` is derived deterministically:
 
    ```
-   stream = HMAC-SHA256(key = seed, message = "roll:" || n)
+   stream[0] = HMAC-SHA256(key = seed, message = "roll:" || n)
    ```
 
-   with rejection sampling to avoid modulo bias on 1–6.
+   Consume bytes below 252 and map them to 1–6. If the first block contains
+   fewer than two accepted bytes, extend the stream with
+   `HMAC-SHA256(seed, "roll:" || n || ":" || block)`, starting at block 1.
+   This rejection sampling avoids modulo bias and always has a deterministic
+   continuation.
 4. On match end, reveal `seed`. The player (or the built-in verifier) checks
    `SHA-256(seed) == commitment` and replays every roll.
 
@@ -41,31 +45,19 @@ guarantee and the analysis feature are the same piece of architecture.
   with any SHA-256 tool, not just ours. This matters: verification the app does
   itself proves nothing to a sceptic.
 
-## Open: the browser has no synchronous hash
+## Resolved: synchronous hashing in the engine
 
 `DiceSource.roll(n)` is **synchronous** — the engine is pure and non-async by
 design, so the `HashFunctions` seam it depends on is synchronous too. Node
 satisfies that via `node:crypto` (`nodeCryptoHashFunctions`, deliberately not
 exported from the engine's index so the public surface stays pure).
 
-**The browser cannot.** `crypto.subtle.digest` and `.sign` are Promise-only, and
-the shipped app runs in a webview (Tauri), not in Node. So there is currently no
-adapter that works where the game actually runs. This is not a flaw in the seam —
-the seam is right — but the gap has to close before M3.
-
-Two options, to be decided with an ADR when the sidecar work starts:
-
-1. **Derive rolls in batches, ahead of time.** At match start, asynchronously
-   derive the first N rolls and top the buffer up in the background. A match has
-   a bounded number of rolls, and `roll(n)` stays synchronous and pure. Keeps the
-   engine dependency-free. Costs a little machinery around the buffer.
-2. **Ship a small synchronous SHA-256/HMAC** inside the engine (~100 lines,
-   no dependencies). Works identically everywhere, no buffering. Costs carrying
-   and trusting our own crypto primitive for something a platform already
-   provides.
-
-Option 1 is probably right — we should not be hand-rolling crypto for this — but
-it needs measuring against how the sidecar and match setup end up working.
+Browsers still expose SHA-256 and HMAC only through Promise-based Web Crypto.
+ADR 0005 records the measured decision to ship a small synchronous
+SHA-256/HMAC-SHA-256 implementation in `packages/engine` instead of adding a
+roll buffer. `CommitRevealDiceSource` uses it by default and produces the same
+bytes in Node and the browser. The implementation is checked against published
+SHA-256 vectors and RFC 4231 HMAC-SHA-256 vectors.
 
 ## The luck meter
 
