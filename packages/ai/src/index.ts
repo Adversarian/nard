@@ -39,4 +39,25 @@ export interface Evaluator {
   dispose(): Promise<void>
 }
 
-// GnubgEvaluator and NetEvaluator land in M2. See docs/ai-spec.md.
+export {
+  GnubgBridgeError,
+  type BridgeClientOptions,
+  type BridgeCommand,
+} from './bridge-client.js'
+export {
+  GnubgEvaluator,
+  type GnubgEvaluatorOptions,
+} from './gnubg.js'
+export { NetEvaluator, equityFromProbs, fallbackProbs } from './net.js'
+export {
+  chooseCube,
+  chooseMove,
+  DIFFICULTIES,
+  PERSONALITY_SAFETY_CLAMP,
+  selectRankedMove,
+  type CubeChoice,
+  type Difficulty,
+  type DifficultyRung,
+  type MoveSelection,
+  type Personality,
+} from './policy.js'

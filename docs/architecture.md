@@ -75,11 +75,12 @@ text protocol. No GPL code enters this tree, and this repo stays MIT. Do not
 link, vendor, or copy gnubg source into `packages/`.
 
 **Our own evaluator is optional.** `packages/ai` defines an `Evaluator`
-interface; `GnubgEvaluator` is the shipping default and `NetEvaluator` (a small
-TD-trained net, trained offline in Python, shipped as a weights blob) is the
-fallback for when the sidecar is unavailable, and a future source of a more
-human-feeling difficulty ladder. Nothing outside `packages/ai` may know which
-backend is in use.
+interface; `GnubgEvaluator` is the shipping default and `NetEvaluator` is the
+pure-TypeScript fallback for when the sidecar is unavailable. Its M2
+fixed-weight evaluation is deliberately modest: it keeps the game responsive
+and coherent during a sidecar failure, but is not presented as gnubg-strength.
+A later TD-trained weights blob can replace it behind the same interface.
+Nothing outside `packages/ai` may know which backend is in use.
 
 ## Performance, and why this stays TypeScript
 
@@ -93,18 +94,12 @@ rendering. Nothing in it is compute-bound:
 | Analysing a full match | seconds, batched, off the main thread |
 | Rendering the board | GPU-composited transforms |
 
-For the `NetEvaluator` fallback the numbers are: ~16k multiply-adds per
-position, so 20–60k evaluations/sec in JS on `Float32Array`. A 0-ply decision is
-~20 evals (instant); 1-ply is ~8,400 (~0.3 s). That is enough for a credible
-opponent unassisted. Full rollouts are not viable in JS and are not attempted —
-they belong to gnubg.
-
-**The escape hatch, so nobody ever proposes a rewrite:** the only code that
-could plausibly need native speed is the net's inference inner loop — one
-isolated function behind the `Evaluator` interface. If it ever matters, that
-function is ported to WASM. The rules engine, analysis, storage and UI stay in
-TypeScript permanently. A Rust rewrite of the application is explicitly not on
-any roadmap.
+The M2 `NetEvaluator` evaluates legal results with fixed positional features.
+It is fast enough for the failure path; it does not attempt multi-ply search or
+rollouts. If a trained network later makes native inference worthwhile, its
+inner loop remains one isolated function behind `Evaluator` and can move to
+WASM without changing the rules engine, analysis, storage or UI. A Rust rewrite
+of the application is explicitly not on any roadmap.
 
 ## Dependencies
 

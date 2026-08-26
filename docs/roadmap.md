@@ -18,7 +18,9 @@ move-generation disagreements with gnubg over 10,000 random positions.
 
 ## M2 — A real opponent
 
-gnubg sidecar and bridge, `Evaluator` interface, the six-rung difficulty ladder.
+gnubg sidecar and bridge, `Evaluator` interface, the six-rung difficulty ladder,
+and the reusable personality policies. Portraits, named ladder presentation and
+progression remain in M6.
 
 **Exit:** `pnpm selfplay` reports monotonically improving PR across rungs 1→6,
 and rung 6 plays gnubg-strength.
@@ -49,10 +51,11 @@ review, drills. Dice verification UI.
 **Exit:** playing a match then opening Review shows correct per-move errors, a
 PR consistent with gnubg's own analysis of the same match, and a verifiable seed.
 
-## M6 — Personalities, ladder, variants
+## M6 — Ladder presentation, progression, variants
 
-Style biases, the six named opponents, portraits, progression, head-to-head
-records. Mahbooseh and Gul Bara variants. Asynchronous play with his son.
+The six named opponents, portraits, progression and head-to-head records using
+the M2 personality policies. Mahbooseh and Gul Bara variants. Asynchronous play
+with his son.
 
 **Exit:** he beats the ladder, and tells someone about it.
 
