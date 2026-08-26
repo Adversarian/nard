@@ -10,6 +10,7 @@ import { create } from 'zustand'
 import {
   canDouble,
   createGameState,
+  createMatchState,
   legalMoves,
   offerDouble,
   passDouble,
@@ -34,6 +35,13 @@ import {
 import { SeededDiceSource } from './dice'
 import { decisionMaker } from './view'
 import { sound } from '../sound/player'
+import {
+  loadProgress,
+  recordResult,
+  saveProgress,
+  type Opponent,
+  type Progress,
+} from '../ladder/opponents'
 import {
   chooseOpponentMove,
   DEFAULT_OPPONENT,
@@ -66,6 +74,13 @@ interface GameStore {
    */
   fast: boolean
   setFast(on: boolean): void
+
+  /** Which screen is showing. The ladder is the entry point. */
+  view: 'ladder' | 'play'
+  opponentId: string
+  progress: Progress
+  startMatch(opponent: Opponent, matchLength: number): void
+  toLadder(): void
   runOpponent(): Promise<void>
   setOpponent(config: Partial<OpponentConfig>): void
 
@@ -92,6 +107,28 @@ export const useGame = create<GameStore>((set, get) => ({
   degraded: false,
   busy: false,
   fast: false,
+  view: 'ladder',
+  opponentId: 'mehrdad',
+  progress: loadProgress(),
+
+  startMatch(opponent, matchLength) {
+    const state = createGameState(createMatchState({ length: matchLength }))
+    set({
+      state,
+      draft: emptyDraft(state.position),
+      selected: null,
+      rollNumber: 0,
+      dice: new SeededDiceSource(),
+      opponent: { rung: opponent.rung, personality: opponent.personality, side: 'dark' },
+      opponentId: opponent.id,
+      view: 'play',
+      degraded: false,
+    })
+  },
+
+  toLadder() {
+    set({ view: 'ladder' })
+  },
 
   setFast(on) {
     set({ fast: on })
@@ -211,6 +248,12 @@ export const useGame = create<GameStore>((set, get) => ({
       const played = playMove(state, move)
       if (played.phase === 'game-over' || played.phase === 'match-over') {
         sound.play('win', { gain: 0.8 })
+      }
+      if (played.phase === 'match-over' && played.result) {
+        const { progress, opponentId } = get()
+        const next = recordResult(progress, opponentId, played.result.winner === 'light')
+        saveProgress(next)
+        set({ progress: next })
       }
       set({ state: played, draft: emptyDraft(played.position), selected: null })
       return
