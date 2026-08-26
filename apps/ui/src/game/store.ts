@@ -75,13 +75,14 @@ interface GameStore {
   setFast(on: boolean): void
 
   /** Which screen is showing. The ladder is the entry point. */
-  view: 'ladder' | 'play'
+  view: 'ladder' | 'play' | 'review'
   opponentId: string
   progress: Progress
   /** The archived match just finished, so Review knows what to open. */
   lastMatchId: string | null
   startMatch(opponent: Opponent, matchLength: number): void
   toLadder(): void
+  toReview(): void
   runOpponent(): Promise<void>
   setOpponent(config: Partial<OpponentConfig>): void
 
@@ -144,6 +145,10 @@ export const useGame = create<GameStore>((set, get) => ({
 
   toLadder() {
     set({ view: 'ladder' })
+  },
+
+  toReview() {
+    if (get().lastMatchId) set({ view: 'review' })
   },
 
   setFast(on) {

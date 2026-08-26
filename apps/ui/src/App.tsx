@@ -11,6 +11,8 @@ import { useAffordances, useGame } from './game/store'
 import { useKeyboard } from './game/useKeyboard'
 import type { OpponentConfig } from './game/opponent'
 import { Outcome } from './game/Outcome'
+import { Review } from './review/Review'
+import { findMatch } from './game/archive'
 import { Ladder } from './ladder/Ladder'
 import { opponentById } from './ladder/opponents'
 import { decisionMaker, reconcile, toAbsolute } from './game/view'
@@ -51,7 +53,24 @@ function Game() {
   const lang = useSettings((s) => s.lang)
 
   useDevHarness()
+  const lastMatchId = useGame((s) => s.lastMatchId)
+  const opponentId = useGame((s) => s.opponentId)
+  const toLadder = useGame((s) => s.toLadder)
 
+  if (view === 'review') {
+    const saved = lastMatchId ? findMatch(lastMatchId) : null
+    if (saved) {
+      return (
+        <Review
+          saved={saved}
+          matchId={lastMatchId!}
+          lang={lang}
+          opponentId={opponentId}
+          onClose={toLadder}
+        />
+      )
+    }
+  }
   if (view === 'ladder') {
     return <Ladder lang={lang} progress={progress} onStart={startMatch} />
   }
@@ -175,6 +194,7 @@ function PlayView() {
             opponentId={store.opponentId}
             onNext={() => store.nextGame()}
             onLadder={() => store.toLadder()}
+            {...(store.lastMatchId ? { onReview: () => store.toReview() } : {})}
           />
         )}
         <Board

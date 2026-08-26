@@ -20,12 +20,15 @@ export function Outcome({
   opponentId,
   onNext,
   onLadder,
+  onReview,
 }: {
   state: GameState
   lang: Lang
   opponentId: string
   onNext: () => void
   onLadder: () => void
+  /** Only present once the match is over and its record is archived. */
+  onReview?: () => void
 }) {
   const s = STRINGS[lang]
   const fa = lang === 'fa'
@@ -77,10 +80,19 @@ export function Outcome({
         </div>
 
         <div className="mt-7 flex gap-3">
+          {onReview && (
+            <button
+              onClick={onReview}
+              autoFocus
+              className="rounded-sm px-4 py-2 text-sm"
+              style={{ border: '1px solid var(--inlay)', color: 'var(--text)' }}
+            >
+              {fa ? 'مرور' : 'Review'}
+            </button>
+          )}
           {!matchOver && (
             <button
               onClick={onNext}
-              autoFocus
               className="rounded-sm px-4 py-2 text-sm"
               style={{ border: '1px solid var(--inlay)', color: 'var(--text)' }}
             >
@@ -89,7 +101,6 @@ export function Outcome({
           )}
           <button
             onClick={onLadder}
-            autoFocus={matchOver}
             className="rounded-sm px-4 py-2 text-sm"
             style={{
               border: `1px solid ${matchOver ? 'var(--inlay)' : 'var(--frame)'}`,

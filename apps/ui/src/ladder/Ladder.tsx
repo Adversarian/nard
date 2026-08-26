@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { OPPONENTS, isBeaten, type Opponent, type Progress } from './opponents'
 import { digits, STRINGS, type Lang } from '../i18n/strings'
+import { PrHistory } from '../review/PrHistory'
 
 const portraits = import.meta.glob<string>('../assets/portraits/*.webp', {
   eager: true,
@@ -102,6 +103,8 @@ export function Ladder({
           )
         })}
       </div>
+
+      <PrHistory lang={lang} />
 
       <div className="mt-10 flex items-center gap-3">
         <span className="text-xs uppercase tracking-wider" style={{ color: 'var(--text-dim)' }}>

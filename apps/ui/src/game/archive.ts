@@ -21,6 +21,43 @@ export interface ArchivedMatch {
   readonly saved: SavedMatchV1
 }
 
+/**
+ * A match's PR, once it has been reviewed.
+ *
+ * Kept separately from the match record because analysis is on demand and
+ * expensive — a match is a few kilobytes but analysing one is thousands of
+ * evaluator calls. Recomputing the whole history to draw a chart would be
+ * absurd, so the figure is remembered the first time it is produced.
+ */
+export interface PrPoint {
+  readonly id: string
+  readonly at: string
+  readonly checkerPr: number
+  readonly cubePr: number | null
+  readonly opponentId: string
+}
+
+const PR_KEY = 'nard.prhistory'
+
+export function prHistory(): PrPoint[] {
+  try {
+    return JSON.parse(localStorage.getItem(PR_KEY) ?? '[]') as PrPoint[]
+  } catch {
+    return []
+  }
+}
+
+export function recordPr(point: PrPoint): void {
+  try {
+    const rows = prHistory().filter((r) => r.id !== point.id)
+    rows.push(point)
+    rows.sort((a, b) => a.at.localeCompare(b.at))
+    localStorage.setItem(PR_KEY, JSON.stringify(rows.slice(-LIMIT)))
+  } catch {
+    // Storage blocked; the chart simply will not fill in.
+  }
+}
+
 export function listMatches(): ArchivedMatch[] {
   try {
     const raw = localStorage.getItem(KEY)
