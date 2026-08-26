@@ -56,6 +56,48 @@ server with the `agent-browser` skill. Use it to check what screenshots cannot:
 that dragging a checker feels right, that an illegal drop snaps back, that
 animations are interruptible, that the board is usable with the keyboard.
 
+## Seeing motion
+
+You cannot watch an animation. You can still hold it to a spec, with three
+techniques that between them are better than watching:
+
+```bash
+pnpm dev &
+pnpm motion              # every interaction
+pnpm motion checker-move # one of them
+```
+
+**1. Filmstrips.** `.shots/motion/<id>.filmstrip.png` tiles the frames of the
+animation into one contact sheet. Frame *spacing* is the easing curve made
+visible — tight spacing is slow, wide spacing is fast — so an eased move and a
+linear one look obviously different on the sheet. Open the PNG.
+
+**2. Numeric traces.** `.shots/motion/<id>.trace.json` holds the real transform
+of every checker at every animation frame. The report derives measured lift
+scale, travel distance, settle time and overshoot from it and checks them
+against `design-language.md`.
+
+**3. A control, whenever a number looks bad.** Instrumentation perturbs what it
+measures. Before treating a bad reading as a bug, reproduce it a second way.
+This is not pedantry — during development the harness reported a rock-solid
+60fps animation as 30fps *three different times*, for three different reasons
+(a sampler that forced style recalc, a loop that missed every other frame, and
+CDP round-trips interleaving with the render loop). Each looked exactly like a
+performance problem in the app.
+
+### What the harness can and cannot certify
+
+- **Reliable:** the sequence is right, the checker is actually set down at the
+  end, travel lands in the right place, nothing is left stuck mid-animation, and
+  any regression in the above. It has already caught four real bugs.
+- **Noisy:** peak overshoot. 60Hz sampling straddles the peak of a 260ms spring,
+  so a true 3.8% reads between 0.5% and 2.8%. Treat a *zero* reading as a bug and
+  a small one as fine.
+- **Not proof:** frame pacing, under instrumentation. Reported for information.
+
+**Feel is still not measured.** Whether a move feels *good* is a human
+judgement. Say so in the PR rather than implying the harness checked it.
+
 ## Headless testing
 
 ```bash

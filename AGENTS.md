@@ -41,9 +41,11 @@ not obviously a win. Say so in the PR.
 4. **Reuse before writing.** Check `docs/architecture.md` §Dependencies for the
    libraries already chosen for a job. Do not add a competing library without an
    ADR.
-5. **Licence hygiene.** This repo is MIT. Do not add GPL/AGPL dependencies to
-   anything that ships. (`gnubg` is used as a dev-time oracle only — see
-   `docs/adr/0004-gnubg-as-dev-oracle.md`.)
+5. **Licence hygiene.** This repo is MIT. Do not add GPL/AGPL *libraries* to
+   anything that ships. `gnubg` is GPL and IS shipped — but as a separate
+   process invoked over a text protocol, which is aggregation, not linking. Never
+   link, vendor, or copy its source into `packages/`. See
+   `docs/adr/0004-gnubg-as-ai-backend.md`.
 6. **Never commit on `main`.** Branch, PR, merge.
 
 ## 3. Repo map
