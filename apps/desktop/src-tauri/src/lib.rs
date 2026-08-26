@@ -28,12 +28,22 @@ enum EvalRequest {
     CubeDecision(CubeDecisionRequest),
 }
 
+// These mirror `packages/ai/src/protocol.ts`. THAT FILE IS THE DEFINITION; this
+// is a reader of it, in a language the TypeScript compiler cannot check. When
+// the protocol changes, this does not fail to build — it fails at runtime, in
+// the packaged app only, by falling back to the weaker evaluator without
+// saying why. It has already happened once: match context was added to the
+// cube request and `cube_owned: bool` was left behind here.
+//
+// Change one, grep the other.
 #[derive(Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 struct RankMovesRequest {
     position_id: String,
     dice: [u8; 2],
     plies: u8,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    match_id: Option<String>,
 }
 
 #[derive(Debug, Deserialize, Serialize)]
@@ -41,7 +51,14 @@ struct RankMovesRequest {
 struct CubeDecisionRequest {
     position_id: String,
     cube_value: u32,
-    cube_owned: bool,
+    /// -1 centred, otherwise the GNU board side that owns it.
+    cube_owner: i8,
+    match_length: u32,
+    /// GNU side 0 (opponent), side 1 (the player the position represents).
+    score: [u32; 2],
+    crawford: bool,
+    jacoby: bool,
+    plies: u8,
 }
 
 impl EvalRequest {
