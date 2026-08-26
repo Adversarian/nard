@@ -42,3 +42,25 @@ describe('screen frame', () => {
     expect(changed[0]!.loc).toEqual({ kind: 'point', point: 7 })
   })
 })
+
+describe('who has to act', () => {
+  it('hands a cube offer to the player who did not double', async () => {
+    const { canDouble, createGameState, offerDouble, rollGame, playMove, generateLegalMoves } =
+      await import('@nard/engine')
+    const { decisionMaker } = await import('./view')
+
+    // Get to a to-roll phase with the cube available.
+    let state = rollGame(createGameState(), [6, 1])
+    state = playMove(state, generateLegalMoves(state.position, [6, 1])[0]!)
+    expect(state.phase).toBe('to-roll')
+    expect(canDouble(state)).toBe(true)
+
+    const doubler = state.onRoll
+    const offered = offerDouble(state)
+
+    // The engine keeps onRoll on the DOUBLER; the responder is the other player.
+    // Reading onRoll as "whose turn" here deadlocks the game.
+    expect(offered.onRoll).toBe(doubler)
+    expect(decisionMaker(offered)).not.toBe(doubler)
+  })
+})

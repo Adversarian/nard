@@ -10,7 +10,7 @@
  * boundary. Nothing downstream of here knows the engine mirrors anything.
  */
 
-import { mirror, type GameState, type Position } from '@nard/engine'
+import { mirror, type GameState, type PlayerId, type Position } from '@nard/engine'
 import type { Side } from '../board/Checker'
 import type { CheckerEntity, Loc } from '../board/entities'
 
@@ -91,4 +91,22 @@ export function reconcile(prev: readonly CheckerEntity[], abs: Position): Checke
   }))
 
   return [...kept, ...moved, ...extra]
+}
+
+
+/**
+ * Who has to act right now.
+ *
+ * This is NOT always `state.onRoll`. `offerDouble` leaves `onRoll` pointing at
+ * the player who doubled, and it is the OTHER player who must take or pass. Read
+ * `onRoll` directly as "whose turn is it" and a cube offered by the opponent
+ * leaves the player with no way to answer — the game simply stops.
+ *
+ * Every "is it my turn" check goes through here.
+ */
+export function decisionMaker(state: GameState): PlayerId {
+  if (state.phase === 'cube-offered') {
+    return state.onRoll === 'light' ? 'dark' : 'light'
+  }
+  return state.onRoll
 }

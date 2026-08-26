@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { legalMoves, pipCount, positionKey } from '@nard/engine'
+import { canDouble, legalMoves, pipCount, positionKey } from '@nard/engine'
 import { Board, Cube, Die, FIELD_X, FIELD_Y, GEO } from './board'
 import { AnimatedCheckers } from './board/AnimatedCheckers'
 import { Interaction } from './board/Interaction'
@@ -8,7 +8,8 @@ import { installHarness, installPlayHarness } from './dev/harness'
 import { SCENES, sceneById, type Scene } from './dev/scenes'
 import { availableHops } from './game/draft'
 import { useAffordances, useGame } from './game/store'
-import { reconcile, toAbsolute } from './game/view'
+import type { OpponentConfig } from './game/opponent'
+import { decisionMaker, reconcile, toAbsolute } from './game/view'
 
 type Theme = 'khatam' | 'tournament' | 'kaghaz'
 
@@ -32,8 +33,20 @@ export function App() {
 
 function PlayView() {
   const store = useGame()
-  const { state, draft, selected } = store
+  const { state, draft, selected, thinking, degraded } = store
   const aff = useAffordances()
+  // Not `onRoll === 'light'` — see decisionMaker(): during a cube offer the
+  // responder is the player who did NOT double.
+  const isHumanTurn = decisionMaker(state) === 'light'
+
+  // Hand over to the opponent whenever it is their move. The driver guards
+  // against re-entry, so firing on every relevant state change is safe.
+  useEffect(() => {
+    if (state.phase === 'game-over' || state.phase === 'match-over') return
+    if (decisionMaker(state) === store.opponent.side) {
+      void store.runOpponent()
+    }
+  }, [state.phase, state.onRoll, store])
 
   // Mid-turn the player sees their draft; otherwise the committed position.
   const abs = useMemo(
@@ -96,6 +109,15 @@ function PlayView() {
       double: () => useGame.getState().double(),
       take: () => useGame.getState().take(),
       pass: () => useGame.getState().passCube(),
+      opponent: (rung, personality) =>
+        useGame.getState().setOpponent({
+          ...(rung !== undefined ? { rung } : {}),
+          ...(personality !== undefined
+            ? { personality: personality as OpponentConfig['personality'] }
+            : {}),
+        }),
+      thinking: () => useGame.getState().thinking || useGame.getState().busy,
+      fast: (on) => useGame.getState().setFast(on),
     })
   }, [])
 
@@ -120,7 +142,9 @@ function PlayView() {
         ? FIELD_Y + 0.55
         : FIELD_Y + GEO.innerH / 2
 
-  const canRoll = state.phase === 'to-roll' || state.phase === 'opening-roll'
+  const canRoll =
+    isHumanTurn && (state.phase === 'to-roll' || state.phase === 'opening-roll')
+  const facingDouble = state.phase === 'cube-offered' && isHumanTurn
 
   return (
     <div className="flex h-full flex-col" style={{ background: 'var(--app-bg)' }}>
@@ -128,10 +152,17 @@ function PlayView() {
         <span className="tracking-[0.3em] uppercase" style={{ color: 'var(--text-dim)' }}>
           nard
         </span>
-        <span style={{ color: 'var(--text-dim)' }}>
-          {state.match.length > 0 ? `Match to ${state.match.length}` : 'Money game'} ·{' '}
-          {state.match.score.light}–{state.match.score.dark}
-          {state.match.crawford ? ' · Crawford' : ''}
+        <span className="flex items-center gap-4" style={{ color: 'var(--text-dim)' }}>
+          {degraded && (
+            <span title="The strong engine is unavailable; the opponent is playing on a weaker fallback.">
+              ⚠ reduced engine
+            </span>
+          )}
+          <span>
+            {state.match.length > 0 ? `Match to ${state.match.length}` : 'Money game'} ·{' '}
+            {state.match.score.light}–{state.match.score.dark}
+            {state.match.crawford ? ' · Crawford' : ''}
+          </span>
         </span>
       </header>
 
@@ -161,15 +192,23 @@ function PlayView() {
         <Pip label="Opponent" value={pips.opponent} />
         <div className="flex items-center gap-3">
           {canRoll && <Action onClick={() => store.roll()}>Roll</Action>}
+          {thinking && (
+            <span className="animate-pulse" style={{ color: 'var(--text-dim)' }}>
+              thinking…
+            </span>
+          )}
           {aff.canUndo && <Action onClick={() => store.undo()}>Undo</Action>}
           {state.phase === 'to-move' && !aff.anyPlay && !aff.canUndo && (
             <span style={{ color: 'var(--text-dim)' }}>No legal play</span>
           )}
-          {state.phase === 'cube-offered' && (
+          {facingDouble && (
             <>
-              <Action onClick={() => store.take()}>Take</Action>
+              <Action onClick={() => store.take()}>Take {state.cube.value * 2}</Action>
               <Action onClick={() => store.passCube()}>Pass</Action>
             </>
+          )}
+          {canRoll && canDouble(state) && (
+            <Action onClick={() => store.double()}>Double</Action>
           )}
           {state.phase === 'game-over' && (
             <Action onClick={() => store.nextGame()}>

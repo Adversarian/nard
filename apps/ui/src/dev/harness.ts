@@ -162,6 +162,12 @@ export interface NardPlayHarness {
   double(): void
   take(): void
   pass(): void
+  /** Reconfigure the opponent mid-session. Rung 1..6. */
+  opponent(rung?: 1 | 2 | 3 | 4 | 5 | 6, personality?: string): void
+  /** True while the opponent is deciding or mid-turn. */
+  thinking(): boolean
+  /** Skip the opponent's deliberate pacing. Automated tests only. */
+  fast(on: boolean): void
   animating(): boolean
   settled(timeoutMs?: number): Promise<void>
   trace(ms?: number): Promise<TraceSample[]>

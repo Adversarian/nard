@@ -26,6 +26,9 @@ page.on('console', (m) => {
 
 await page.goto(BASE, { waitUntil: 'networkidle' })
 await page.waitForFunction(() => '__nard' in globalThis)
+// Automated runs skip the opponent's deliberate pauses; those exist so a person
+// can follow the move, and they turn a two-minute game into a twenty-minute one.
+await page.evaluate('__nard.fast(true)')
 
 for (let g = 1; g <= games; g++) {
   const result = await page.evaluate<{
@@ -40,11 +43,16 @@ for (let g = 1; g <= games; g++) {
     const sleep = ms => new Promise(r => setTimeout(r, ms))
     let turns = 0, hops = 0
 
-    for (let guard = 0; guard < 4000; guard++) {
+    for (let guard = 0; guard < 20000; guard++) {
       const s = n.state()
       if (s.phase === 'game-over' || s.phase === 'match-over') {
         return { turns, hops, phase: s.phase, result: s.result, score: s.score }
       }
+      // A cube offered BY the opponent is ours to answer, even though onRoll
+      // still points at them. Check it before deferring on onRoll.
+      if (s.phase === 'cube-offered' && s.onRoll !== 'light') { n.take(); await sleep(15); continue }
+      // Otherwise the opponent drives its own turn; wait rather than playing for it.
+      if (s.onRoll !== 'light' || n.thinking()) { await sleep(15); continue }
       if (s.phase === 'to-roll' || s.phase === 'opening-roll') {
         n.roll(); turns++; await sleep(30); continue
       }
@@ -56,7 +64,7 @@ for (let g = 1; g <= games; g++) {
         await sleep(25)
         continue
       }
-      if (s.phase === 'cube-offered') { n.take(); continue }
+
       await sleep(40)
     }
     const s = n.state()
@@ -73,6 +81,9 @@ for (let g = 1; g <= games; g++) {
     await page.evaluate(`__nard.state()`) // keep the harness fresh
     await page.reload({ waitUntil: 'networkidle' })
     await page.waitForFunction(() => '__nard' in globalThis)
+// Automated runs skip the opponent's deliberate pauses; those exist so a person
+// can follow the move, and they turn a two-minute game into a twenty-minute one.
+await page.evaluate('__nard.fast(true)')
   }
 }
 
