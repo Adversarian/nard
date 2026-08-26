@@ -61,20 +61,26 @@ export function Ladder({
                 background: 'var(--app-panel)',
               }}
             >
+              {/*
+                A framed print, not an avatar. These are portrait-format
+                engravings; a circular crop threw away a third of the taller
+                ones — Ostad lost his coat entirely — and the 4:5 frame they
+                were drawn in costs almost nothing to keep.
+              */}
               <div className="relative">
                 <img
                   src={portraitFor(o.id)}
                   alt=""
-                  width={128}
-                  height={128}
-                  className="rounded-full"
+                  width={132}
+                  height={165}
+                  className="rounded-sm object-cover"
                   style={{ border: '1px solid var(--inlay)' }}
                 />
                 {beaten && (
                   <span
-                    className="absolute -bottom-1 flex h-6 w-6 items-center justify-center rounded-full text-xs"
+                    className="absolute -bottom-2 flex h-6 w-6 items-center justify-center rounded-full text-xs"
                     style={{
-                      [fa ? 'left' : 'right']: '-0.25rem',
+                      [fa ? 'left' : 'right']: '-0.5rem',
                       background: 'var(--inlay)',
                       color: 'var(--app-bg)',
                     }}
