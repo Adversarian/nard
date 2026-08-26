@@ -29,23 +29,34 @@ They are opponents the player is meant to enjoy meeting, not obstacles.
 
 512×512 WebP. Regenerate from the briefs above if a larger size is ever needed.
 
-## Square them by CROPPING, never by scaling
+## Keep the 4:5 frame they were drawn in
 
 **The image model does not honour a requested square size.** Asking for
-1024×1024 returned 1122×1402, 1024×1536 and 1183×1329 — all portrait. Scaling
-those to 512×512 squashes them, and every face comes out subtly widened. It is
-not obvious in isolation and is very obvious once someone says it.
+1024×1024 returned 1122×1402, 1024×1536 and 1183×1329 — all portrait.
 
-Crop a square off the **top** — these are head-and-shoulders compositions, so a
-centred crop takes the top of the head off:
+Two mistakes came out of that, in order. Scaling them to 512×512 squashed every
+face; that is obvious once someone says it. Cropping them square instead fixed
+the proportions but threw away a fifth to a third of each image — Ostad, whose
+source is 2:3, lost his coat entirely, and these are portraits where the
+clothing is half the character.
+
+So the frame fits the pictures rather than the other way round. **4:5 costs
+almost nothing**: four of the six lose no pixels at all, Davoud loses 10% of his
+width and Ostad 17% of his height, against 20–33% for a square.
 
 ```
-ffmpeg -i in.png -vf "crop=w=min(iw\,ih):h=min(iw\,ih):x=(iw-min(iw\,ih))/2:y=0,\
-scale=512:512:flags=lanczos" -frames:v 1 out.png
+ffmpeg -i in.png -vf \
+  "crop=w='min(iw,ih*0.8)':h='min(ih,iw/0.8)':x='(iw-min(iw,ih*0.8))/2':y=0,\
+   scale=512:640:flags=lanczos" -frames:v 1 out.png
 ```
 
-Check the aspect ratio of whatever the model returns before converting. Do not
-assume the size you asked for is the size you got.
+Tall images crop from the top, which keeps the head and as much of the clothing
+as the ratio allows. They are shown as framed prints, not circular avatars — a
+circle would undo all of this.
+
+Check the aspect ratio of whatever the model returns before converting, and
+check what the crop actually removed. Do not assume the size you asked for is
+the size you got.
 
 
 ## A note on likeness
