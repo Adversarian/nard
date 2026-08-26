@@ -1,4 +1,4 @@
-import { CHECKER_R, FIELD_X, FIELD_Y, GEO, checkerCentre, pointGeom, type HomeSide } from './geometry'
+import { CHECKER_R, FIELD_X, FIELD_Y, GEO, checkerCentre, pointGeom } from './geometry'
 
 /**
  * Hit targets and affordances.
@@ -17,7 +17,6 @@ export function Interaction({
   selected,
   hits,
   counts,
-  home = 'right',
   onPick,
   onDrop,
 }: {
@@ -28,7 +27,6 @@ export function Interaction({
   hits: readonly number[]
   /** Checkers currently on each point, for placing the ghost. */
   counts: Readonly<Record<number, number>>
-  home?: HomeSide
   onPick: (point: number) => void
   onDrop: (point: number) => void
 }) {
@@ -38,7 +36,7 @@ export function Interaction({
     <g>
       {/* affordance marks */}
       {movable.map((p) => {
-        const g = pointGeom(p, home)
+        const g = pointGeom(p)
         const y = g.top ? FIELD_Y + 0.028 : FIELD_Y + GEO.innerH - 0.028
         return (
           <rect
@@ -58,7 +56,7 @@ export function Interaction({
       {selected !== null &&
         (() => {
           const n = counts[selected] ?? 1
-          const c = checkerCentre(selected, Math.max(0, n - 1), Math.max(1, n), home)
+          const c = checkerCentre(selected, Math.max(0, n - 1), Math.max(1, n))
           return (
             <circle
               cx={c.x}
@@ -75,7 +73,7 @@ export function Interaction({
       {destinations.map((p) => {
         if (p <= 0) return null
         const n = counts[p] ?? 0
-        const c = checkerCentre(p, n, n + 1, home)
+        const c = checkerCentre(p, n, n + 1)
         const isHit = hits.includes(p)
         return (
           <circle
@@ -95,7 +93,7 @@ export function Interaction({
       {/* hit targets, last so they sit above everything */}
       {Array.from({ length: 24 }, (_, i) => {
         const p = i + 1
-        const g = pointGeom(p, home)
+        const g = pointGeom(p)
         return (
           <rect
             key={`h${p}`}

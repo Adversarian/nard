@@ -43,6 +43,16 @@ export const CHECKER_R = GEO.checkerD / 2
 
 export type HomeSide = 'left' | 'right'
 
+/**
+ * Geometry is home-AGNOSTIC. It always describes the board with the player's
+ * home on the right.
+ *
+ * `home: 'left'` is applied by mirroring the whole case in Board.tsx, which
+ * moves the bear-off tray with it. Mirroring only the point columns — the
+ * obvious approach, and the first one tried — leaves the tray on the far side
+ * of the board from the home it belongs to.
+ */
+
 /** Column 0..11, left to right, skipping the bar. */
 function columnX(col: number): number {
   return FIELD_X + col * GEO.u + (col >= 6 ? GEO.barW : 0) + GEO.u / 2
@@ -67,10 +77,9 @@ export interface PointGeom {
  * mirrors it horizontally for players who keep their home board on the left;
  * that is a user preference and is never tied to interface language.
  */
-export function pointGeom(p: number, home: HomeSide = 'right'): PointGeom {
+export function pointGeom(p: number): PointGeom {
   const top = p >= 13
-  let col = top ? p - 13 : 12 - p
-  if (home === 'left') col = 11 - col
+  const col = top ? p - 13 : 12 - p
   return {
     x: columnX(col),
     baseY: top ? FIELD_Y : FIELD_Y + GEO.innerH,
@@ -119,9 +128,8 @@ export function checkerCentre(
   p: number,
   k: number,
   count: number,
-  home: HomeSide = 'right',
 ): { x: number; y: number } {
-  const g = pointGeom(p, home)
+  const g = pointGeom(p)
   return { x: g.x, y: g.baseY + g.dir * (CHECKER_R + k * stackSpacing(count)) }
 }
 

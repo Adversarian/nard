@@ -12,20 +12,25 @@ import type { OpponentConfig } from './game/opponent'
 import { Ladder } from './ladder/Ladder'
 import { opponentById } from './ladder/opponents'
 import { decisionMaker, reconcile, toAbsolute } from './game/view'
-import { digits, langFromUrl, STRINGS } from './i18n/strings'
+import { digits, STRINGS } from './i18n/strings'
+import { Settings } from './settings/Settings'
+import { useSettings } from './settings/store'
 import { SOUNDS } from './sound/manifest'
 import { sound } from './sound/player'
 
-type Theme = 'khatam' | 'tournament' | 'kaghaz'
-
 export function App() {
   const params = new URLSearchParams(location.search)
-  const theme = (params.get('theme') as Theme) ?? 'khatam'
   const scene = params.get('scene')
+  const theme = useSettings((s) => s.theme)
+  const lang = useSettings((s) => s.lang)
 
   useEffect(() => {
     document.documentElement.dataset.theme = theme
   }, [theme])
+  useEffect(() => {
+    document.documentElement.lang = lang
+    document.documentElement.dir = lang === 'fa' ? 'rtl' : 'ltr'
+  }, [lang])
 
   if (location.pathname.startsWith('/gallery')) return <Gallery theme={theme} />
   if (scene) return <SceneView scene={sceneById(scene)} />
@@ -41,7 +46,7 @@ function Game() {
   const view = useGame((s) => s.view)
   const progress = useGame((s) => s.progress)
   const startMatch = useGame((s) => s.startMatch)
-  const lang = langFromUrl()
+  const lang = useSettings((s) => s.lang)
 
   useDevHarness()
 
@@ -52,7 +57,8 @@ function Game() {
 }
 
 function PlayView() {
-  const lang = langFromUrl()
+  const lang = useSettings((st) => st.lang)
+  const home = useSettings((st) => st.home)
   const s = STRINGS[lang]
   const n = (v: number) => digits(v, lang)
   const store = useGame()
@@ -147,11 +153,12 @@ function PlayView() {
             {n(state.match.score.light)}–{n(state.match.score.dark)}
             {state.match.crawford ? ` · ${s.crawford}` : ''}
           </span>
+          <Settings />
         </span>
       </header>
 
       <main className="flex flex-1 items-center justify-center px-6">
-        <Board>
+        <Board home={home}>
           <AnimatedCheckers entities={entities} />
           {state.dice && (
             <>
@@ -214,29 +221,8 @@ function PlayView() {
           )}
         </div>
         <Pip label={s.you} value={n(pips.player)} />
-        <VolumeToggle labels={[s.mute, s.unmute]} />
       </footer>
     </div>
-  )
-}
-
-/** One control, not a mixer. See docs/sound-spec.md. */
-function VolumeToggle({ labels }: { labels: [string, string] }) {
-  const [on, setOn] = useState(sound.volume > 0)
-  return (
-    <button
-      onClick={() => {
-        const next = on ? 0 : 0.7
-        sound.setVolume(next)
-        setOn(!on)
-        if (next > 0) void sound.unlock()
-      }}
-      aria-label={on ? labels[0] : labels[1]}
-      className="opacity-60 transition-opacity hover:opacity-100"
-      style={{ color: 'var(--text-dim)' }}
-    >
-      {on ? '\u{1F50A}' : '\u{1F507}'}
-    </button>
   )
 }
 
@@ -319,7 +305,7 @@ function SceneView({ scene }: { scene: Scene }) {
   )
 }
 
-function Gallery({ theme }: { theme: Theme }) {
+function Gallery({ theme }: { theme: string }) {
   return (
     <div className="min-h-full p-8" style={{ background: 'var(--app-bg)' }}>
       <h1 className="mb-6 text-sm tracking-[0.3em] uppercase" style={{ color: 'var(--text-dim)' }}>
