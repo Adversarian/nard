@@ -1,5 +1,18 @@
 @import 'tailwindcss';
 
+/*
+ * Vazirmatn covers Persian and Latin in one family, so the numbers do not
+ * change shape when the interface language does. Self-hosted — the app must
+ * work offline. Licence and provenance in assets/fonts/PROVENANCE.md.
+ */
+@font-face {
+  font-family: 'Vazirmatn';
+  src: url('../assets/fonts/Vazirmatn[wght].woff2') format('woff2-variations');
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
 /* ---------------------------------------------------------------------------
    Design tokens. Binding — see docs/design-language.md.
    Components consume these; they do not invent colour, spacing or timing.
@@ -44,26 +57,36 @@
 [data-theme='tournament'] {
   --app-bg: #0b0d0c;
   --app-panel: #141a17;
-  --frame: #2a2119;
-  --frame-hi: #453629;
-  --inlay: #8a7d64;
+  --frame: #33281d;
+  --frame-hi: #56432f;
+  --inlay: #a89a7c;
   --field: #0f2a22;
   --point-a: #e8e2d5;
-  --point-b: #1d1a17;
+  /* Was #1d1a17 — near-black points put ebony checkers on ebony ground and the
+     rim alone could not carry it. A dark green still reads as the classic
+     board and leaves the checkers somewhere to stand. */
+  --point-b: #16382c;
   --checker-light: #f7f3e8;
   --checker-light-edge: #c8c0ad;
   --checker-dark: #131110;
-  --checker-dark-rim: #8a7d64;
-  --checker-dark-hi: #3a3530;
+  /* The legibility device. Brighter here than in Khatam because this board has
+     no warm ground to lift the dark checkers off. */
+  --checker-dark-rim: #c9bfa6;
+  --checker-dark-hi: #3f3a33;
   --text: #e8e2d5;
   --text-dim: #8d8878;
+  --good: #7c9a62;
+  --warn: #d4952f;
+  --bad: #c7522a;
 }
 
 [data-theme='kaghaz'] {
-  --app-bg: #f4efe4;
-  --app-panel: #ece5d6;
-  --frame: #c9bda4;
-  --frame-hi: #ddd0b8;
+  --app-bg: #efe8da;
+  --app-panel: #e5dccb;
+  /* Darker than the page on purpose: on a light ground the board has no edge
+     unless the case supplies one, and it read as a printed diagram. */
+  --frame: #a8946f;
+  --frame-hi: #c4b28d;
   --inlay: #a8862c;
   --field: #e6dcc8;
   --point-a: #c25b3f;
@@ -75,6 +98,9 @@
   --checker-dark-hi: #58493a;
   --text: #2a241e;
   --text-dim: #6d6455;
+  --good: #5c7a4a;
+  --warn: #b07a1e;
+  --bad: #b04525;
 }
 
 html,
