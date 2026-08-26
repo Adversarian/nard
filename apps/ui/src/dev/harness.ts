@@ -74,11 +74,52 @@ function readTransforms(): TraceSample['checkers'] {
 
 void NUM
 
+export const anyMovingNow = (): boolean =>
+  document.querySelector('[data-checker][data-moving]') !== null
+
+export async function settledNow(timeoutMs = 4000): Promise<void> {
+  const deadline = performance.now() + timeoutMs
+  let clear = 0
+  while (performance.now() < deadline) {
+    await new Promise(requestAnimationFrame)
+    clear = anyMovingNow() ? 0 : clear + 1
+    if (clear >= 2) return
+  }
+  throw new Error('settled() timed out')
+}
+
+export function traceNow(ms = 2000): Promise<TraceSample[]> {
+  // Register the NEXT frame before doing any work in this one — see the note in
+  // docs/playtesting.md about instrumentation perturbing what it measures.
+  return new Promise<TraceSample[]>((resolve) => {
+    const samples: TraceSample[] = []
+    const t0 = performance.now()
+    let sawMotion = false
+    let clear = 0
+    let done = false
+    const step = (now: number) => {
+      if (!done) requestAnimationFrame(step)
+      samples.push({ t: +(now - t0).toFixed(2), checkers: readTransforms() })
+      if (anyMovingNow()) {
+        sawMotion = true
+        clear = 0
+      } else {
+        clear++
+      }
+      if ((sawMotion && clear >= 4) || now - t0 >= ms) {
+        done = true
+        resolve(samples)
+      }
+    }
+    requestAnimationFrame(step)
+  })
+}
+
 export function installHarness(
   entities: CheckerEntity[],
   commit: (next: CheckerEntity[]) => void,
 ): void {
-  const anyMoving = () => document.querySelector('[data-checker][data-moving]') !== null
+  const anyMoving = anyMovingNow
 
   const harness: NardHarness = {
     state: () => entities.map((e) => ({ id: e.id, side: e.side, loc: e.loc })),
@@ -99,52 +140,40 @@ export function installHarness(
     },
 
     animating: anyMoving,
-
-    async settled(timeoutMs = 4000) {
-      const deadline = performance.now() + timeoutMs
-      // Two clear frames, so we don't resolve in the gap between sequence steps.
-      let clear = 0
-      while (performance.now() < deadline) {
-        await new Promise(requestAnimationFrame)
-        clear = anyMoving() ? 0 : clear + 1
-        if (clear >= 2) return
-      }
-      throw new Error('settled() timed out')
-    },
-
-    trace(ms = 2000) {
-      // Register the NEXT frame before doing any work in this one.
-      //
-      // The obvious `while (…) await new Promise(requestAnimationFrame)` loop
-      // does its sampling before re-registering, so it misses every other frame
-      // and reports a rock-solid 60fps animation as 30fps. That sent me hunting
-      // a performance problem that did not exist. Keep the registration first.
-      return new Promise<TraceSample[]>((resolve) => {
-        const samples: TraceSample[] = []
-        const t0 = performance.now()
-        let sawMotion = false
-        let clear = 0
-        let done = false
-
-        const step = (now: number) => {
-          if (!done) requestAnimationFrame(step)
-
-          samples.push({ t: +(now - t0).toFixed(2), checkers: readTransforms() })
-          if (anyMoving()) {
-            sawMotion = true
-            clear = 0
-          } else {
-            clear++
-          }
-          if ((sawMotion && clear >= 4) || now - t0 >= ms) {
-            done = true
-            resolve(samples)
-          }
-        }
-        requestAnimationFrame(step)
-      })
-    },
+    settled: settledNow,
+    trace: traceNow,
   }
 
   ;(globalThis as unknown as { __nard: NardHarness }).__nard = harness
+}
+
+
+/** The control surface for a real game, as opposed to a static fixture. */
+export interface NardPlayHarness {
+  state(): Record<string, unknown>
+  /** Legal complete moves for the current roll, in standard notation. */
+  legal(): string[]
+  /** Individual hops playable right now, as [from, to]. 25 = bar, 0 = off. */
+  hops(): [number, number][]
+  roll(): void
+  /** Pick up from `from` and drop on `to`. 25 = bar, 0 = off. */
+  move(from: number, to: number): void
+  undo(): void
+  double(): void
+  take(): void
+  pass(): void
+  animating(): boolean
+  settled(timeoutMs?: number): Promise<void>
+  trace(ms?: number): Promise<TraceSample[]>
+}
+
+export function installPlayHarness(
+  api: Omit<NardPlayHarness, 'animating' | 'settled' | 'trace'>,
+): void {
+  ;(globalThis as unknown as { __nard: NardPlayHarness }).__nard = {
+    ...api,
+    animating: anyMovingNow,
+    settled: settledNow,
+    trace: traceNow,
+  }
 }

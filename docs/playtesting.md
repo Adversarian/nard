@@ -98,6 +98,28 @@ performance problem in the app.
 **Feel is still not measured.** Whether a move feels *good* is a human
 judgement. Say so in the PR rather than implying the harness checked it.
 
+## Playing it
+
+```bash
+pnpm playtest      # play one complete game through the real UI
+pnpm playtest 5    # five
+```
+
+This drives the actual click path — pick a checker up, drop it on a point — via
+`window.__nard`, so it exercises turn drafting, the engine boundary, the
+animation identity reconciler and the render loop together. If a game completes
+here, a person can play one.
+
+It is worth more than its size suggests. It found a bug that no amount of
+reading would have: a hop's `hit` flag is only correct for the hop ORDER the
+engine recorded, so playing the same two checkers onto one blot in the opposite
+order made the engine reject a legal move. That needs a specific board state to
+appear at all, which is exactly the kind of defect unit tests do not reach.
+
+`window.__nard` in a running dev server exposes `state()`, `legal()`, `hops()`,
+`roll()`, `move(from, to)`, `undo()`, `double()`, `take()`, `pass()`,
+`settled()` and `trace()`. Use it rather than clicking at coordinates.
+
 ## Headless testing
 
 ```bash

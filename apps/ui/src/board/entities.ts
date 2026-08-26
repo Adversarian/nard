@@ -29,7 +29,7 @@ export interface CheckerEntity {
 
 /** Build entities from an engine-style `pts` array. */
 export function entitiesFrom(
-  pts: readonly number[],
+  pts: ArrayLike<number>,
   off: number,
   oppOff: number,
   onRollSide: Side = 'light',
