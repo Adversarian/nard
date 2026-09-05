@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Glossary } from '../chrome/Glossary'
 import { OPPONENTS, isBeaten, opponentKey, type Opponent, type Progress } from './opponents'
 import { digits, T, type Lang } from '../i18n'
 import { PrHistory } from '../review/PrHistory'
@@ -43,13 +44,15 @@ export function Ladder({
 }) {
   const t = T(lang)
   const [length, setLength] = useState(7)
+  const [glossary, setGlossary] = useState(false)
   const fa = lang === 'fa'
 
   return (
     <div
       dir={fa ? 'rtl' : 'ltr'}
-      className="room flex min-h-full flex-col items-center justify-center gap-8 px-6 py-10"
+      className="room relative flex min-h-full flex-col items-center justify-center gap-8 px-6 py-10"
     >
+      {glossary && <Glossary lang={lang} onClose={() => setGlossary(false)} />}
       <h1>
         <Wordmark size="lg" />
       </h1>
@@ -173,6 +176,16 @@ export function Ladder({
         >
           {t('ladder.matchHint', { n: length })}
         </p>
+        {/* The hint above uses "gammon", "backgammon" and "the doubling cube"
+            in one sentence, so the way out of not knowing them belongs next
+            to it rather than buried in settings. */}
+        <button
+          onClick={() => setGlossary(true)}
+          className="text-label uppercase tracking-[0.18em] underline-offset-4 transition-opacity hover:opacity-100 hover:underline"
+          style={{ color: 'var(--text-dim)', opacity: 0.7 }}
+        >
+          {t('glossary.open')}
+        </button>
       </div>
     </div>
   )

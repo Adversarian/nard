@@ -133,5 +133,6 @@
   "glossary.match.term": "Match length",
   "glossary.match.body": "A match runs until someone reaches the target number of points, not for a fixed number of games. Longer matches favour the better player, because luck has more time to even out.",
   "glossary.pr.term": "PR",
-  "glossary.pr.body": "Performance rating: the average equity your play throws away per decision, measured against the engine’s best. Lower is better, it does not care whether you won, and it is the only number here that measures you rather than the dice."
+  "glossary.pr.body": "Performance rating: the average equity your play throws away per decision, measured against the engine’s best. Lower is better, it does not care whether you won, and it is the only number here that measures you rather than the dice.",
+  "glossary.open": "Backgammon terms"
 }
