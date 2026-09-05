@@ -239,6 +239,25 @@ material: the checker's rim, dish and specular; the drilled die pip (dark on the
 upper-left inner wall, catching light on the lower-right — that inversion is the
 whole reason a pip reads as a hole); every cast shadow.
 
+### Do not filter the board group
+
+**The board's shadow is a drawn shape that is then blurred — not a filter over
+the board.** That distinction is not stylistic.
+
+An `feDropShadow` over the case produced a pale ghost of the board's own left
+edge, complete with the khatam band's dark lozenges, floating on the table
+outside the corners. Chrome's ACCELERATED rasteriser samples the filter input
+outside the filter region and clamps to the edge pixels, smearing a copy of the
+board's edge outward. Headless Chrome renders the same markup perfectly at every
+window size, so it was invisible in every screenshot this repo takes and
+survived several rounds of review; the owner saw it in a real browser.
+
+Blurring a UNIFORM ROUNDED RECT is immune by construction: if the rasteriser
+smears its edge pixels, it smears the shadow colour into the shadow.
+
+**Check filter work with `pnpm live --headed`.** It runs a real GPU-backed
+browser and needs a display. Nothing else here can see this class of bug.
+
 ### Filters are for the static board only
 
 An SVG filter re-rasterises its entire subtree whenever anything inside it

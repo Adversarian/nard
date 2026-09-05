@@ -92,7 +92,34 @@ export function Board({
             Anything expensive added to this file belongs inside this group;
             anything that moves belongs outside it.
           */}
-          <g filter="url(#board-shadow)">
+          {/* The shadow the case throws on the table, as its own shape.
+              See board-shadow in Defs.tsx for why it is not a filter over the
+              board. Wide and weak first, tight and darker on top: one blur
+              alone reads as a sticker with a glow. */}
+          <g style={{ pointerEvents: 'none' }}>
+            <rect
+              x={-0.15}
+              y={0.34}
+              width={BOARD_W + 0.3}
+              height={BOARD_H + 0.1}
+              rx="0.5"
+              fill="var(--shadow)"
+              opacity="0.3"
+              filter="url(#blur-wide)"
+            />
+            <rect
+              x={0.06}
+              y={0.13}
+              width={BOARD_W - 0.12}
+              height={BOARD_H}
+              rx="0.26"
+              fill="var(--shadow)"
+              opacity="0.45"
+              filter="url(#blur-tight)"
+            />
+          </g>
+
+          <g>
             <Case />
             <Field />
             <Points />
