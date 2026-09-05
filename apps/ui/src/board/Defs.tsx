@@ -343,37 +343,31 @@ export function BoardDefs() {
 
       {/* --- board shadow ----------------------------------------------- */}
       {/*
-        Warm, and restrained.
+        The shadow is a DRAWN SHAPE that is then blurred — not a filter over
+        the board itself. That distinction is load-bearing.
 
-        This was two black `feDropShadow` layers at 0.7 and 0.5 — which the
-        design doc forbids in as many words ("cast shadows are `--shadow`, never
-        black") and which I wrote anyway. Black under a warm board does not read
-        as a shadow; it reads as a grey rectangular halo behind a cut-out, and
-        on the paper theme it was the single loudest thing on the screen.
+        `feDropShadow` over the case produced a pale ghost of the board's own
+        left edge, complete with the khatam band's dark lozenges, floating on
+        the table outside the corners. It appears ONLY under GPU rasterisation:
+        headless Chrome renders it perfectly at every window size, a real
+        browser at the same size does not, which is why it survived several
+        rounds of screenshots. Chrome's accelerated path samples the filter
+        input outside the filter region and clamps to the edge pixels, smearing
+        a copy of the board's edge outward.
+        (Confirmed by removing the filter: the region went from luminance 100
+        back to the table's 32.)
 
-        `floodColor` goes through `style`, not the attribute: a CSS custom
-        property does not resolve in an SVG presentation attribute, so the
-        theme's own shadow colour only reaches the filter this way.
-
-        Two layers still, because one blur reads as a sticker with a glow: a
-        tight contact shadow where the case meets the table, and a wide, weak
-        ambient one. Both much lighter than before.
+        Blurring a UNIFORM ROUNDED RECT is immune to that by construction. If
+        the rasteriser smears its edge pixels, it smears the shadow colour into
+        the shadow — which is what a shadow looks like anyway. Do not go back to
+        filtering the board group; the artefact is invisible in every headless
+        capture this repo takes.
       */}
-      <filter id="board-shadow" x="-15%" y="-15%" width="130%" height="140%">
-        <feDropShadow
-          dx="0"
-          dy="0.06"
-          stdDeviation="0.07"
-          style={{ floodColor: 'var(--shadow)', floodOpacity: 0.5 }}
-          result="tight"
-        />
-        <feDropShadow
-          in="tight"
-          dx="0"
-          dy="0.34"
-          stdDeviation="0.6"
-          style={{ floodColor: 'var(--shadow)', floodOpacity: 0.28 }}
-        />
+      <filter id="blur-tight" x="-30%" y="-30%" width="160%" height="160%">
+        <feGaussianBlur stdDeviation="0.11" />
+      </filter>
+      <filter id="blur-wide" x="-30%" y="-30%" width="160%" height="160%">
+        <feGaussianBlur stdDeviation="0.5" />
       </filter>
     </defs>
   )

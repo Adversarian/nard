@@ -34,6 +34,7 @@ turns first and captures the view a player actually sits in front of; add
 ```bash
 pnpm pointer       # presses, drags and releases a REAL mouse
 pnpm pacing        # times the opponent's turn at normal speed
+pnpm live --headed # a real GPU-rasterised browser, not headless
 ```
 
 Everything else here — `pnpm playtest`, `pnpm sound`, `pnpm live` — drives the
@@ -57,6 +58,14 @@ one against the other reported 306ms for a pause of well over a second. And
 **a turn's last hop commits it**, which empties the draft, so counting draft
 growth alone misses the final checker and a two-checker turn yields no gaps at
 all.
+
+**Headless Chrome cannot see SVG filter bugs.** It rasterises filters on the
+CPU and gets them right; the accelerated path does not always agree. A
+drop-shadow over the board smeared a ghost of its own edge onto the table in a
+real browser and rendered perfectly in every headless capture here, at every
+window size, through several rounds of review. `pnpm live --headed` runs a real
+browser (it needs a display); use it for anything touching a filter, and add
+`--scale=1` since the artefact only showed at a device pixel ratio of 1.
 
 One trap it is now hardened against, worth knowing before writing another
 driver: **`__nard` answers even when the board is not on screen.** The store

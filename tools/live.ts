@@ -23,14 +23,27 @@ const turns = Number(arg('turns', '6'))
 const name = arg('out', `live-${theme}-${lang}`)
 // Defaults to the desktop shell's own window size, not a big monitor — the
 // layout that matters is the one the app actually opens at.
+const scale = Number(arg('scale', '2'))
 const width = Number(arg('w', '1180'))
 const height = Number(arg('h', '760'))
 
 await mkdir('.shots', { recursive: true })
-const browser = await chromium.launch({ channel: 'chrome' })
+/*
+ * `--headed` runs a real, GPU-rasterised browser instead of the headless one.
+ *
+ * Use it for anything involving SVG filters. Headless Chrome renders them on
+ * the CPU and gets them right; the accelerated path does not always agree, and
+ * a drop-shadow over the board smeared a ghost of its own edge onto the table
+ * that was invisible in every headless capture this repo takes. Needs a
+ * display (DISPLAY set).
+ */
+const browser = await chromium.launch({
+  channel: 'chrome',
+  headless: !process.argv.includes('--headed'),
+})
 const page = await browser.newPage({
   viewport: { width, height },
-  deviceScaleFactor: 2,
+  deviceScaleFactor: scale,
 })
 
 await startMatch(page, { lang, theme, opponent: 'mehrdad', matchLength: 7 })
