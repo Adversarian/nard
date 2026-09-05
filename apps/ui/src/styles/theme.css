@@ -16,6 +16,11 @@
 /* ---------------------------------------------------------------------------
    Design tokens. Binding — see docs/design-language.md.
    Components consume these; they do not invent colour, spacing or timing.
+
+   Every surface token comes in three parts — base, `-hi`, `-lo` — because the
+   board is lit from one direction and a flat fill cannot describe a lit object.
+   See the light model at the top of board/Defs.tsx before adding a colour here:
+   `-hi` is the face turned toward the upper-left, `-lo` the face turned away.
    --------------------------------------------------------------------------- */
 
 @theme {
@@ -31,71 +36,168 @@
   --dur-reduced: 120ms;
 }
 
-/* Khatam — default theme */
+/* ---------------------------------------------------------------------------
+   Khatam — the default. Walnut, camel bone, ebony and brass wire, which are
+   the four materials a real khatam board is actually made of.
+   --------------------------------------------------------------------------- */
 :root,
 [data-theme='khatam'] {
-  --app-bg: #100c09;
-  --app-panel: #1a1410;
-  --frame: #46331f;
-  --frame-hi: #6b5133;
+  --app-bg: #0a0806;
+  /* The board sits in a pool of light on a dark table rather than floating on
+     a flat backdrop. Costs one gradient and does most of the work of making
+     the board read as an object in a room. */
+  --app-glow: #2b1e13;
+  --app-panel: #17110c;
+  --app-line: #2e2318;
+
+  --frame: #4a3520;
+  --frame-hi: #866440;
+  --frame-lo: #1d140c;
   --inlay: #c9a227;
-  --field: #17110d;
-  --point-a: #a63d2b;
-  --point-b: #2f5148;
-  --checker-light: #f0e4cc;
-  --checker-light-edge: #c2af8b;
-  --checker-dark: #1a1410;
+
+  --field: #1d160f;
+  /* Points were #a63d2b / #2f5148 on a #17110d field. The cypress green came
+     out within a couple of percent of the field it sat on and disappeared;
+     both are lifted here until they carry at the tip, where the sheen is
+     darkest. Check the tip, not the base, when retuning these. */
+  --point-a: #b4482d;
+  --point-a-lo: #6b2818;
+  /* Lifted from #2f6f5d, which sat 13 lightness points under the oxblood. Two
+     point colours want to be within a few points of each other or the darker
+     one stops reading as a point and starts reading as more field — which is
+     exactly what it did. Match LIGHTNESS between the pair; the hues can be as
+     far apart as you like. */
+  --point-b: #3c8f77;
+  --point-b-lo: #1e5546;
+  --point-hi: #f2e5c6;
+  --point-seam: #e8d9b4;
+
+  --khatam-ground: #191108;
+  --khatam-bone: #cbbc86;
+  /* Brass is the brightest material on a khatam surface and the only one with
+     a specular — flat mid-gold is what a printed imitation looks like. The
+     band reads as inlay rather than as a gold chain because the wire is THIN
+     and gradiented, not because it is dim. */
+  --khatam-brass: #bc9a77;
+  --khatam-brass-hi: #dac4a8;
+  --khatam-brass-lo: #6e5423;
+
+  --checker-light: #f5ecd7;
+  --checker-light-edge: #c4ae87;
+  --checker-light-lo: #8a7554;
+  --checker-dark: #1d1713;
+  /* The brass rim is a legibility device, not decoration — without it ebony
+     checkers vanish into the cypress points. Check contrast before removing. */
   --checker-dark-rim: #c9a227;
-  --checker-dark-hi: #4a3b2e;
-  --text: #efe3cd;
-  --text-dim: #a2917a;
-  --good: #7c9a62;
+  --checker-dark-hi: #6d5738;
+  --checker-dark-lo: #0b0806;
+
+  /* Warm, never #000 — a black shadow on a warm board reads as a hole. */
+  --shadow: #180d04;
+
+  --pip-deep: #241a12;
+  --pip-lit: #7a6242;
+
+  --text: #f0e5d0;
+  --text-dim: #a4917a;
+  --good: #7fa066;
   --warn: #d4952f;
-  --bad: #c7522a;
+  --bad: #c9542b;
 }
 
+/* ---------------------------------------------------------------------------
+   Tournament — the green cloth and tan points of a competition board.
+   --------------------------------------------------------------------------- */
 [data-theme='tournament'] {
-  --app-bg: #0b0d0c;
-  --app-panel: #141a17;
-  --frame: #33281d;
-  --frame-hi: #56432f;
-  --inlay: #a89a7c;
-  --field: #0f2a22;
-  --point-a: #e8e2d5;
-  /* Was #1d1a17 — near-black points put ebony checkers on ebony ground and the
-     rim alone could not carry it. A dark green still reads as the classic
-     board and leaves the checkers somewhere to stand. */
-  --point-b: #16382c;
-  --checker-light: #f7f3e8;
-  --checker-light-edge: #c8c0ad;
-  --checker-dark: #131110;
-  /* The legibility device. Brighter here than in Khatam because this board has
-     no warm ground to lift the dark checkers off. */
-  --checker-dark-rim: #c9bfa6;
-  --checker-dark-hi: #3f3a33;
-  --text: #e8e2d5;
-  --text-dim: #8d8878;
-  --good: #7c9a62;
+  --app-bg: #080a09;
+  --app-glow: #16241d;
+  --app-panel: #101613;
+  --app-line: #22302a;
+
+  --frame: #3a2c1e;
+  --frame-hi: #6b543a;
+  --frame-lo: #170f09;
+  --inlay: #b2a077;
+
+  --field: #0f2f25;
+  --point-a: #c9bb9c;
+  --point-a-lo: #9a8c6f;
+  --point-b: #2a5f4e;
+  --point-b-lo: #163a2f;
+  --point-hi: #ffffff;
+  --point-seam: #0a1c16;
+
+  --khatam-ground: #14100b;
+  --khatam-bone: #c8bfa6;
+  --khatam-brass: #9a8c6c;
+  --khatam-brass-hi: #bcae8c;
+  --khatam-brass-lo: #5a4f36;
+
+  /* Brighter than the bone points so light checkers stay distinct from the
+     tan point they stand on. */
+  --checker-light: #fdfaf2;
+  --checker-light-edge: #cbc2ad;
+  --checker-light-lo: #948c7a;
+  --checker-dark: #17140f;
+  --checker-dark-rim: #cfc3a4;
+  --checker-dark-hi: #5c5344;
+  --checker-dark-lo: #080706;
+
+  --shadow: #04140e;
+
+  --pip-deep: #1a1712;
+  --pip-lit: #6e6551;
+
+  --text: #ece6d8;
+  --text-dim: #8f8a79;
+  --good: #7fa066;
   --warn: #d4952f;
-  --bad: #c7522a;
+  --bad: #c9542b;
 }
 
+/* ---------------------------------------------------------------------------
+   Kaghaz — paper. A light room; the board is still the darkest thing in it.
+   --------------------------------------------------------------------------- */
 [data-theme='kaghaz'] {
-  --app-bg: #efe8da;
-  --app-panel: #e5dccb;
+  --app-bg: #f2ebdd;
+  --app-glow: #fffaf0;
+  --app-panel: #e8dfcd;
+  --app-line: #d3c6ad;
+
   /* Darker than the page on purpose: on a light ground the board has no edge
      unless the case supplies one, and it read as a printed diagram. */
-  --frame: #a8946f;
-  --frame-hi: #c4b28d;
+  --frame: #9c8760;
+  --frame-hi: #cbb994;
+  --frame-lo: #6b5a3a;
   --inlay: #a8862c;
-  --field: #e6dcc8;
-  --point-a: #c25b3f;
-  --point-b: #5c7a6e;
+
+  --field: #e3d8c0;
+  --point-a: #c05537;
+  --point-a-lo: #8e3a24;
+  --point-b: #52796b;
+  --point-b-lo: #35544a;
+  --point-hi: #fffdf6;
+  --point-seam: #6b5a3a;
+
+  --khatam-ground: #4a3c26;
+  --khatam-bone: #f6efdd;
+  --khatam-brass: #a88a4a;
+  --khatam-brass-hi: #cbb27a;
+  --khatam-brass-lo: #6b5628;
+
   --checker-light: #fffdf7;
-  --checker-light-edge: #d6cbb2;
-  --checker-dark: #2a241e;
+  --checker-light-edge: #ccbf9f;
+  --checker-light-lo: #9c8f70;
+  --checker-dark: #2e2720;
   --checker-dark-rim: #a8862c;
-  --checker-dark-hi: #58493a;
+  --checker-dark-hi: #6d5c45;
+  --checker-dark-lo: #191411;
+
+  --shadow: #6b5636;
+
+  --pip-deep: #2e2720;
+  --pip-lit: #8a7857;
+
   --text: #2a241e;
   --text-dim: #6d6455;
   --good: #5c7a4a;
@@ -116,6 +218,21 @@ body {
   font-family: var(--font-sans);
   font-variant-numeric: tabular-nums;
   -webkit-font-smoothing: antialiased;
+}
+
+/*
+ * The room. A single warm pool centred a little above the board, falling off
+ * to the corners — the same light the board itself is shaded for. Fixed
+ * attachment so it belongs to the window rather than scrolling with content.
+ */
+.room {
+  background:
+    radial-gradient(
+      ellipse 120% 90% at 50% 38%,
+      var(--app-glow) 0%,
+      transparent 68%
+    ),
+    var(--app-bg);
 }
 
 @media (prefers-reduced-motion: reduce) {

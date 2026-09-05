@@ -19,6 +19,22 @@ export function toAbsolute(position: Position, onRoll: GameState['onRoll']): Pos
   return onRoll === 'light' ? position : mirror(position)
 }
 
+/**
+ * One point number, engine frame → screen frame.
+ *
+ * The same conversion `toAbsolute` performs on a whole position, for the cases
+ * that carry a bare point around — a move's hops, say. It lives here beside
+ * its sibling rather than at each call site, because a frame conversion done
+ * inline is a frame conversion nobody can find when it turns out to be
+ * backwards, and pointing at the wrong end of the board is silent.
+ *
+ * Only valid for 1..24. The bar and the tray mirror into each other rather
+ * than into points, so they have no meaning here.
+ */
+export function toAbsolutePoint(point: number, onRoll: GameState['onRoll']): number {
+  return onRoll === 'light' ? point : 25 - point
+}
+
 interface Slot {
   loc: Loc
   side: Side

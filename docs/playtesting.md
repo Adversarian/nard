@@ -13,11 +13,47 @@ without building or launching a desktop binary.
 
 ```bash
 pnpm dev &         # http://localhost:5173
-pnpm shots         # writes .shots/<scene>.png for every scene
+pnpm shots         # .shots/<scene>.png — board fixtures
+pnpm live          # .shots/live-*.png — the play view, a few real turns in
+pnpm screens       # .shots/{ladder,outcome,review}-*.png
 ```
 
 Then **open the PNGs**. They are images; read them directly. A visual change you
 have not viewed is not finished.
+
+**`pnpm shots` alone will mislead you.** Scenes are board fixtures with no game
+behind them, so the score, the opponent, the turn log and the action buttons are
+empty in every single one — which meant the entire interface around the board
+went a long time without anyone looking at it. `pnpm live` plays several real
+turns first and captures the view a player actually sits in front of; add
+`--pick` to leave a checker selected so the landing marks are in the frame, and
+`--lang=fa` / `--theme=` to check the other renderings.
+
+## Clicking it
+
+```bash
+pnpm pointer       # presses, drags and releases a REAL mouse
+```
+
+Everything else here — `pnpm playtest`, `pnpm sound`, `pnpm live` — drives the
+game through `__nard`, which reads the store directly and never touches the
+interface. That is fast and reproducible and it has one enormous blind spot:
+**the whole suite passed against a board on which drag-and-drop did not exist**,
+because nothing in it had ever pressed a mouse button. The first person to open
+the app found it in a minute.
+
+`pnpm pointer` drags a checker to a legal point, drags one off the board to check
+it goes back, clicks source-then-destination, and fails on any console error.
+Anything that changes how a player physically handles the board goes there.
+
+One trap it is now hardened against, worth knowing before writing another
+driver: **`__nard` answers even when the board is not on screen.** The store
+holds a playable game while the ladder is showing, so a driver whose match
+failed to start will happily play a hundred turns against nothing and screenshot
+the ladder at the end of it. `startMatch` now waits for the board element rather
+than a fixed delay. Likewise `__nard.hops()` reports the hops of whoever is on
+roll — including the opponent — while the board offers hit targets only to the
+human; wait on `HUMAN_TO_MOVE`, not `PLAYERS_TURN`.
 
 ## Addressable states
 

@@ -99,5 +99,28 @@ export function layout(entities: readonly CheckerEntity[]): Placement[] {
   return out
 }
 
+/**
+ * The checker a player would physically pick up from `point` — the top of the
+ * stack, which is the LAST one placed there.
+ *
+ * `layout` assigns draw order by position in this same list, so "last in the
+ * list" and "painted on top" are the same checker by construction. Returns null
+ * when the point is empty.
+ */
+export function topEntityAt(
+  entities: readonly CheckerEntity[],
+  point: number,
+): CheckerEntity | null {
+  let top: CheckerEntity | null = null
+  for (const e of entities) {
+    const here =
+      point === 25
+        ? e.loc.kind === 'bar' && e.onRoll
+        : e.loc.kind === 'point' && e.loc.point === point
+    if (here) top = e
+  }
+  return top
+}
+
 /** Spacing used for a point, exported so the UI can size hit targets. */
 export { stackSpacing }
