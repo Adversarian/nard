@@ -124,6 +124,39 @@ await page.waitForTimeout(250)
   }
 }
 
+/* ---- the same drag on a MIRRORED board ----------------------------------- */
+/*
+ * `home: 'left'` mirrors the entire case, and the drag hook converts pointer
+ * coordinates with `getScreenCTM()` taken from the element that was pressed —
+ * which sits INSIDE that mirror. Taking it from the <svg> root instead would
+ * work perfectly on the default board and drop every checker on the horizontal
+ * reflection of the point aimed at, which is the kind of bug that ships.
+ */
+{
+  await startMatch(page, { fast: true, home: 'left' })
+  if (await readyToMove()) {
+    await page.waitForTimeout(250)
+    const [hop] = await hops()
+    if (hop) {
+      const [from, to] = hop
+      const before = (await state()).pts[from]!
+      const a = await centreOf(page, from)
+      const b = await centreOf(page, to)
+      await page.mouse.move(a.x, a.y)
+      await page.mouse.down()
+      await page.mouse.move(b.x, b.y, { steps: 12 })
+      await page.waitForTimeout(60)
+      await page.mouse.up()
+      await page.waitForTimeout(400)
+      const after = (await state()).pts[from]!
+      check(
+        Math.abs(after) === Math.abs(before) - 1,
+        `drag ${from}->${to} works with the home board on the left`,
+      )
+    }
+  }
+}
+
 check(consoleErrors.length === 0, 'no console errors during play')
 for (const e of [...new Set(consoleErrors)].slice(0, 5)) console.log(`       ${e.slice(0, 160)}`)
 

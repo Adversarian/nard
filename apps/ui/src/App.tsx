@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { motion } from 'motion/react'
 import { canDouble, legalMoves, pipCount, positionKey } from '@nard/engine'
 import { Board, Cube, Die, RolledDie, FIELD_X, FIELD_Y, GEO } from './board'
 import { AnimatedCheckers, Carried } from './board/AnimatedCheckers'
@@ -217,9 +218,22 @@ function PlayView() {
           />
         )}
 
-        {/* `min-w-0` so the board's column can shrink; a flex child defaults to
-            its content width and would otherwise push the rail off-screen. */}
-        <div className="flex min-h-0 min-w-0 flex-1 items-center justify-center">
+        {/*
+          `min-w-0` so the board's column can shrink; a flex child defaults to
+          its content width and would otherwise push the rail off-screen.
+
+          The board rises into place once, briefly, when a match opens. It is
+          short and it does not gate input — you can roll through it — because
+          this is a game someone will start five times in an evening and an
+          entrance that has to be waited out stops being a pleasure the second
+          time. `motion` honours prefers-reduced-motion for this automatically.
+        */}
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.34, ease: [0.2, 0.8, 0.3, 1] }}
+          className="flex min-h-0 min-w-0 flex-1 items-center justify-center"
+        >
           <Board home={home} {...(canRoll ? { onFieldClick: () => store.roll() } : {})}>
             {/* Under the checkers, so a marked point reads as the board being
                 marked rather than the checkers being tinted. */}
@@ -251,7 +265,7 @@ function PlayView() {
                 being dragged onto. */}
             {carried && drag && <Carried side={carried.side} x={drag.x} y={drag.y} />}
           </Board>
-        </div>
+        </motion.div>
 
         <Rail
           lang={lang}

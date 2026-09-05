@@ -21,11 +21,15 @@ const lang = arg('lang', 'en')
 const theme = arg('theme', 'khatam')
 const turns = Number(arg('turns', '6'))
 const name = arg('out', `live-${theme}-${lang}`)
+// Defaults to the desktop shell's own window size, not a big monitor — the
+// layout that matters is the one the app actually opens at.
+const width = Number(arg('w', '1180'))
+const height = Number(arg('h', '760'))
 
 await mkdir('.shots', { recursive: true })
 const browser = await chromium.launch({ channel: 'chrome' })
 const page = await browser.newPage({
-  viewport: { width: 1440, height: 900 },
+  viewport: { width, height },
   deviceScaleFactor: 2,
 })
 

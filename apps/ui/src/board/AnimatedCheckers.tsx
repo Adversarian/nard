@@ -19,6 +19,13 @@ export const MOTION = {
   travel: { type: 'spring', stiffness: 420, damping: 28, mass: 0.9 } as const,
   /** Set down: 90ms. */
   drop: { duration: 0.09, ease: [0.2, 0.8, 0.3, 1] as const },
+  /**
+   * Being hit. A checker knocked to the bar turns as it goes and settles
+   * straight — docs/design-language.md has specified this since the motion
+   * section was written and nothing had implemented it. It is the one moment
+   * in a game that should not look like an ordinary placement.
+   */
+  hitSpin: 8,
   reducedMs: 120,
 } as const
 
@@ -83,11 +90,13 @@ const AnimatedChecker = memo(function AnimatedChecker({
    */
   const wasAt = useRef(entity.loc.kind)
   const cameFromBar = useRef(false)
+  const knockedToBar = useRef(false)
 
   useEffect(() => {
     if (prev.current.x === x && prev.current.y === y) return
     travelled.current = Math.hypot(x - prev.current.x, y - prev.current.y)
     cameFromBar.current = wasAt.current === 'bar' && entity.loc.kind === 'point'
+    knockedToBar.current = wasAt.current === 'point' && entity.loc.kind === 'bar'
     wasAt.current = entity.loc.kind
     prev.current = { x, y }
     setMoving(true)
@@ -107,12 +116,14 @@ const AnimatedChecker = memo(function AnimatedChecker({
         x,
         y,
         scale: moving && !reduced ? MOTION.lift.scale : 1,
+        rotate: moving && knockedToBar.current && !reduced ? MOTION.hitSpin : 0,
         opacity: ghost ? 0.28 : 1,
       }}
       transition={{
         x: travel,
         y: travel,
         scale: moving ? MOTION.lift : MOTION.drop,
+        rotate: travel,
         opacity: { duration: 0.09 },
       }}
       onAnimationComplete={() => {

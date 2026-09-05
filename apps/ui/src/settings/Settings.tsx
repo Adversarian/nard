@@ -30,10 +30,10 @@ export function Settings() {
         <Popover.Positioner sideOffset={10} align="end">
           <Popover.Popup
             dir={fa ? 'rtl' : 'ltr'}
-            className="min-w-64 rounded-sm p-4 text-sm shadow-xl outline-none"
+            className="min-w-64 rounded-[3px] p-4 text-sm shadow-2xl outline-none"
             style={{
               background: 'var(--app-panel)',
-              border: '1px solid var(--app-line)',
+              border: '1px solid var(--inlay)',
               color: 'var(--text)',
             }}
           >
@@ -76,9 +76,14 @@ export function Settings() {
                   st.set('volume', next)
                   if (next > 0) void sound.unlock()
                 }}
+                /* "On"/"Off", not "Unmute"/"Mute". These are two states of one
+                   setting with the current one highlighted, and a pair of verbs
+                   reads as two ACTIONS — leaving the player unsure whether the
+                   lit one is what is happening or what would happen if they
+                   pressed it. */
                 options={[
-                  ['on', s.unmute],
-                  ['off', s.mute],
+                  ['on', s.soundOn],
+                  ['off', s.soundOff],
                 ]}
               />
             </Row>

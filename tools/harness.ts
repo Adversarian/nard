@@ -18,6 +18,8 @@ export interface StartOptions {
   theme?: string
   lang?: string
   volume?: number
+  /** Which side the player's home board sits on. Mirrors the whole case. */
+  home?: 'left' | 'right'
 }
 
 /** Load the app, apply settings, and start a match. Leaves a live board. */
@@ -29,12 +31,13 @@ export async function startMatch(page: Page, opts: StartOptions = {}): Promise<v
     theme = 'khatam',
     lang = 'en',
     volume = 0,
+    home = 'right',
   } = opts
 
   await page.goto(BASE, { waitUntil: 'networkidle' })
   await page.evaluate(
     `localStorage.setItem('nard.settings', ${JSON.stringify(
-      JSON.stringify({ theme, lang, home: 'right', volume }),
+      JSON.stringify({ theme, lang, home, volume }),
     )})`,
   )
   await page.reload({ waitUntil: 'networkidle' })

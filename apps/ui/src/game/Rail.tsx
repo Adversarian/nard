@@ -74,7 +74,13 @@ export function Rail({
 
   return (
     <aside
-      className="flex w-[19rem] shrink-0 flex-col gap-4 py-4 text-sm"
+      /*
+       * Narrower on a small window. The desktop shell opens at 1180x760 and can
+       * be dragged down to 960x640, where a fixed 304px rail is nearly a third
+       * of the width and the board is the thing being squeezed for it. Sized in
+       * rem so it also tracks the user's text scaling.
+       */
+      className="flex w-64 shrink-0 flex-col gap-4 py-4 text-sm xl:w-[19rem]"
       style={{ color: 'var(--text)' }}
     >
       {/* ---- who you are playing ------------------------------------- */}
@@ -151,7 +157,18 @@ export function Rail({
         <Head>
           {s.game} {n(gameNo)}
         </Head>
-        <ol className="mt-2 flex min-h-0 flex-col gap-1 overflow-hidden">
+        {/*
+          Faded at the bottom rather than cut. The list is as tall as the window
+          leaves it, so on a small window the last row it can fit gets clipped
+          through the middle of the type — which reads as a rendering fault
+          rather than as "there is more below".
+        */}
+        <ol
+          className="mt-2 flex min-h-0 flex-col gap-1 overflow-hidden"
+          style={{
+            maskImage: 'linear-gradient(to bottom, #000 calc(100% - 1.5rem), transparent)',
+          }}
+        >
           {log.length === 0 && (
             <li className="text-xs" style={{ color: 'var(--text-dim)' }}>
               {s.noMovesYet}

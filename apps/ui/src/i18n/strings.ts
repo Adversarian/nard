@@ -36,6 +36,8 @@ export interface Strings {
   readonly matchOver: string
   readonly mute: string
   readonly unmute: string
+  readonly soundOn: string
+  readonly soundOff: string
   readonly gammon: string
   readonly backgammon: string
   readonly yourTurn: string
@@ -103,6 +105,8 @@ const en: Strings = {
   matchOver: 'Match over',
   mute: 'Mute',
   unmute: 'Unmute',
+  soundOn: 'On',
+  soundOff: 'Off',
   gammon: 'gammon',
   backgammon: 'backgammon',
   yourTurn: 'your move',
@@ -141,6 +145,8 @@ const fa: Strings = {
   matchOver: 'پایان مسابقه',
   mute: 'بی‌صدا',
   unmute: 'صدا',
+  soundOn: 'روشن',
+  soundOff: 'خاموش',
   // مارس is what the game is actually called at an Iranian board, not a gloss.
   gammon: 'مارس',
   backgammon: 'مارس ترکی',
