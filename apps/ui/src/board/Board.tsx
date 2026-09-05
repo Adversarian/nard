@@ -293,11 +293,10 @@ function Bar() {
   const x = FIELD_X + 6 * GEO.u
   return (
     <g>
-      <rect x={x} y={FIELD_Y} width={GEO.barW} height={GEO.innerH} fill="url(#tex-case)" />
+      <rect x={x} y={FIELD_Y} width={GEO.barW} height={GEO.innerH} fill="url(#tex-spine)" />
       <Tint x={x} y={FIELD_Y} w={GEO.barW} h={GEO.innerH} kind="case" />
       <rect x={x} y={FIELD_Y} width={GEO.barW} height={GEO.innerH} fill="url(#bar-light)" />
-      {/* the field falls away into shadow on both sides of it */}
-      <rect x={x - 0.09} y={FIELD_Y} width={GEO.barW + 0.18} height={GEO.innerH} fill="url(#edge-h)" />
+      <RaisedEdges left={x} right={x + GEO.barW} />
       {/* a brass wire down the centre, as on the case seam of a real board */}
       <line
         x1={x + GEO.barW / 2}
@@ -312,15 +311,42 @@ function Bar() {
   )
 }
 
+/**
+ * What a raised strip does to the field either side of it.
+ *
+ * The light is upper-left, so the strip casts to its RIGHT and the field on its
+ * left is simply lit — it gets nothing but the hairline where the two meet.
+ * Both marks sit entirely OUTSIDE the strip; the strip's own shading is its
+ * own business. Anything that spans the strip and spills onto the field on both
+ * sides paints a halo round it, which is what was here before.
+ */
+function RaisedEdges({ left, right }: { left: number; right: number }) {
+  const reach = 0.22 // how far the cast shadow carries across the field
+  return (
+    <g>
+      {/* the line where the field meets the strip's lit side */}
+      <rect
+        x={left - 0.02}
+        y={FIELD_Y}
+        width={0.02}
+        height={GEO.innerH}
+        fill="#000"
+        opacity="0.4"
+      />
+      <rect x={right} y={FIELD_Y} width={reach} height={GEO.innerH} fill="url(#cast-right)" />
+    </g>
+  )
+}
+
 /** The bear-off tray: a divider standing proud, and a well sunk behind it. */
 function Tray() {
   const { innerH, trayW, trayDivider } = GEO
   const dx = FIELD_X + GEO.innerW
   return (
     <g>
-      <rect x={dx} y={FIELD_Y} width={trayDivider} height={innerH} fill="url(#tex-case)" />
+      <rect x={dx} y={FIELD_Y} width={trayDivider} height={innerH} fill="url(#tex-spine)" />
       <Tint x={dx} y={FIELD_Y} w={trayDivider} h={innerH} kind="case" />
-      <rect x={dx - 0.07} y={FIELD_Y} width={trayDivider + 0.14} height={innerH} fill="url(#edge-h)" />
+      <RaisedEdges left={dx} right={dx + trayDivider} />
 
       <rect x={TRAY_X} y={FIELD_Y} width={trayW} height={innerH} fill="url(#tex-field)" />
       <Tint x={TRAY_X} y={FIELD_Y} w={trayW} h={innerH} kind="field" />

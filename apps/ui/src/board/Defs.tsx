@@ -21,6 +21,7 @@ import fieldTex from '../assets/textures/field.webp'
 import bandTex from '../assets/textures/band.webp'
 import boneTex from '../assets/textures/bone.webp'
 import ebonyTex from '../assets/textures/ebony.webp'
+import spineTex from '../assets/textures/spine.webp'
 
 /**
  * Shared SVG materials: wood, khatam inlay, turned checkers, dice, shadows.
@@ -128,12 +129,24 @@ export function BoardDefs() {
         <stop offset="0.7" stopColor="var(--frame-hi)" stopOpacity="0" />
       </linearGradient>
 
-      {/* Raised edges: bright lip on the lit side, dark on the far side. */}
-      <linearGradient id="edge-h" x1="0" y1="0" x2="1" y2="0">
-        <stop offset="0" stopColor="var(--frame-hi)" stopOpacity="0.55" />
-        <stop offset="0.1" stopColor="#000" stopOpacity="0" />
-        <stop offset="0.9" stopColor="#000" stopOpacity="0.35" />
-        <stop offset="1" stopColor="#000" stopOpacity="0.7" />
+      {/*
+        The shadow a raised strip throws onto the field beside it.
+        ONE SIDE ONLY. The light is upper-left, so a raised bar shadows the
+        field to its RIGHT and does nothing to the field on its left.
+
+        What this replaces spanned the bar AND a slice of field on both sides,
+        with a bright stop at one end and a black one at the other — so it
+        painted a pale wash onto the point left of the bar and a dark one onto
+        the point right of it. Measured off a render: a luminance spike of 56
+        against a field of 23, ten pixels clear of the bar's own edge. That is
+        the "the left and right parts seep into the bar" report, and it is also
+        why the brass wire looked off-centre — the wash widened the bar's
+        apparent left side while the wire stayed where it belonged.
+      */}
+      <linearGradient id="cast-right" x1="0" y1="0" x2="1" y2="0">
+        <stop offset="0" stopColor="#000" stopOpacity="0.5" />
+        <stop offset="0.45" stopColor="#000" stopOpacity="0.16" />
+        <stop offset="1" stopColor="#000" stopOpacity="0" />
       </linearGradient>
 
       {/* The tray well, sunk deepest of anything on the board. */}
@@ -183,6 +196,25 @@ export function BoardDefs() {
         y={FIELD_Y}
       >
         <image href={fieldTex} width={GEO.innerW} height={GEO.innerH} preserveAspectRatio="none" />
+      </pattern>
+
+      {/*
+        The bar, and the tray divider, get their OWN timber.
+
+        Both are narrow VERTICAL members, and the case texture is mapped across
+        the whole board — so a slice of it running down the bar showed grain
+        travelling ACROSS the piece instead of along it. Grain that contradicts
+        the shape of the object it is on reads as fake before you can say why.
+
+        It is also sampled far denser than the case: the tile repeats every 2.6
+        units down the bar rather than being stretched over the board's full
+        height, so at 1920x1080 the grain is near its native resolution instead
+        of blown up two and a half times and soft. That softness was most of
+        what remained of "the board still feels a bit cheap" — the bar is the
+        largest unbroken piece of wood on the board and every defect in it shows.
+      */}
+      <pattern id="tex-spine" patternUnits="userSpaceOnUse" width={1.15} height={2.6}>
+        <image href={spineTex} width={1.15} height={2.6} preserveAspectRatio="none" />
       </pattern>
 
       {/* --- checker and die materials ----------------------------------- */}

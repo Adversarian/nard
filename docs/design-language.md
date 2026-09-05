@@ -399,8 +399,21 @@ that is not CC0 may be added. Components emit named EVENTS (`place`, `hit`,
 many times a game carry several samples, because one sample played identically
 reads as a rattle.
 
-Keep `textures/` under about 300 KB and each font subset small. It is a desktop
+Keep `textures/` under about 400 KB and each font subset small. It is a desktop
 game, not a texture demo.
+
+**Grain must run along the piece it is on.** The bar and the tray divider are
+narrow vertical members and get their own vertically-grained swatch
+(`spine.webp`); a slice of the board-wide case texture ran grain ACROSS them,
+and grain that contradicts the shape of the object it is on reads as fake before
+you can say why.
+
+**Sample density matters as much as the swatch.** The generator caps out around
+1.5 megapixels whatever size you ask for, so a texture stretched across the
+whole board is upscaled two-and-a-half times at 1920×1080 and goes soft. Where a
+surface is large, unbroken and looked at closely — the bar above all — tile a
+seamless swatch at something near its native pixel density instead of stretching
+one copy over the whole thing.
 
 **When generating images: the requested size is advisory.** The model quantises
 to its own set of aspect ratios and picks its own resolution — ask for 1536×1024
