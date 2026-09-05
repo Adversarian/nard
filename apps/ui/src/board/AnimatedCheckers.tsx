@@ -20,6 +20,12 @@ export const MOTION = {
   /** Set down: 90ms. */
   drop: { duration: 0.09, ease: [0.2, 0.8, 0.3, 1] as const },
   /**
+   * Under the cursor, before anything is picked up. Deliberately far smaller
+   * than the pick-up lift — this is the board acknowledging where the pointer
+   * is, not an invitation. A strong player does not need the board lit up.
+   */
+  hover: 1.035,
+  /**
    * Being hit. A checker knocked to the bar turns as it goes and settles
    * straight — docs/design-language.md has specified this since the motion
    * section was written and nothing had implemented it. It is the one moment
@@ -65,6 +71,7 @@ const AnimatedChecker = memo(function AnimatedChecker({
   y,
   reduced,
   ghost,
+  lifted,
 }: {
   entity: CheckerEntity
   x: number
@@ -72,6 +79,8 @@ const AnimatedChecker = memo(function AnimatedChecker({
   reduced: boolean
   /** This checker is in the player's hand; what is drawn here is where it came from. */
   ghost: boolean
+  /** The cursor is over a point this checker could be picked up from. */
+  lifted: boolean
 }) {
   const [moving, setMoving] = useState(false)
   const prev = useRef({ x, y })
@@ -111,11 +120,16 @@ const AnimatedChecker = memo(function AnimatedChecker({
       data-checker={entity.id}
       data-side={entity.side}
       {...(moving ? { 'data-moving': '1' } : {})}
+      // A stable hook for pnpm pointer, alongside data-moving. Asserting on the
+      // computed transform instead is fragile: the checker layer re-sorts by
+      // stack height every render, so the DOM order moves under any test that
+      // compares elements by index.
+      {...(lifted ? { 'data-lifted': '1' } : {})}
       initial={false}
       animate={{
         x,
         y,
-        scale: moving && !reduced ? MOTION.lift.scale : 1,
+        scale: moving && !reduced ? MOTION.lift.scale : lifted && !reduced ? MOTION.hover : 1,
         rotate: moving && knockedToBar.current && !reduced ? MOTION.hitSpin : 0,
         opacity: ghost ? 0.28 : 1,
       }}
@@ -151,6 +165,7 @@ const AnimatedChecker = memo(function AnimatedChecker({
 export function AnimatedCheckers({
   entities,
   ghost = null,
+  lifted = null,
 }: {
   entities: readonly CheckerEntity[]
   /**
@@ -159,6 +174,8 @@ export function AnimatedCheckers({
    * they picked up from while deciding where to put it down.
    */
   ghost?: string | null
+  /** The checker under the cursor that could be picked up, if any. */
+  lifted?: string | null
 }) {
   const reduced =
     typeof matchMedia !== 'undefined' &&
@@ -178,6 +195,7 @@ export function AnimatedCheckers({
           y={p.y}
           reduced={reduced}
           ghost={p.entity.id === ghost}
+          lifted={p.entity.id === lifted}
         />
       ))}
     </g>

@@ -1,4 +1,3 @@
-import { useState } from 'react'
 import type { Hop } from '@nard/engine'
 import {
   BAR,
@@ -46,6 +45,8 @@ export function Interaction({
   selected,
   counts,
   dragOver,
+  hover,
+  onHover,
   onDrop,
   onStartDrag,
 }: {
@@ -57,10 +58,16 @@ export function Interaction({
   counts: Readonly<Record<number, number>>
   /** The destination a dragged checker is currently over, if any. */
   dragOver: number | null
+  /**
+   * The point under the cursor. Owned by the caller rather than kept here,
+   * because the CHECKER layer needs it too — a checker you can pick up lifts a
+   * little under the cursor, and that layer is this one's sibling.
+   */
+  hover: number | null
+  onHover: (point: number | null) => void
   onDrop: (point: number) => void
   onStartDrag: (from: number, event: React.PointerEvent<SVGElement>) => void
 }) {
-  const [hover, setHover] = useState<number | null>(null)
   const half = GEO.innerH / 2
   const destinations = hops.map((h) => h.to)
   /**
@@ -146,8 +153,8 @@ export function Interaction({
               fill="transparent"
               style={{ cursor: live ? 'pointer' : 'default' }}
               onPointerDown={press(p)}
-              onPointerEnter={() => setHover(p)}
-              onPointerLeave={() => setHover((h) => (h === p ? null : h))}
+              onPointerEnter={() => onHover(p)}
+              onPointerLeave={() => onHover(null)}
             />
           )
         })}
@@ -178,8 +185,8 @@ export function Interaction({
           opacity={lit === 0 ? 0.22 : 0.1}
           style={{ cursor: 'pointer' }}
           onPointerDown={press(0)}
-          onPointerEnter={() => setHover(0)}
-          onPointerLeave={() => setHover((h) => (h === 0 ? null : h))}
+          onPointerEnter={() => onHover(0)}
+          onPointerLeave={() => onHover(null)}
         />
       )}
     </g>

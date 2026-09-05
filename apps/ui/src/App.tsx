@@ -143,6 +143,13 @@ function PlayView() {
 
   const carried = drag && dragging ? topEntityAt(entities, drag.from) : null
 
+  // The checker under the cursor, when it is one you could actually pick up.
+  const [hover, setHover] = useState<number | null>(null)
+  const lifted =
+    !drag && hover !== null && aff.movable.includes(hover)
+      ? (topEntityAt(entities, hover)?.id ?? null)
+      : null
+
   /*
    * The most recent MOVE, marked only when it was the opponent's.
    *
@@ -238,7 +245,11 @@ function PlayView() {
             {/* Under the checkers, so a marked point reads as the board being
                 marked rather than the checkers being tinted. */}
             <LastMove points={lastPoints} />
-            <AnimatedCheckers entities={entities} ghost={carried?.id ?? null} />
+            <AnimatedCheckers
+              entities={entities}
+              ghost={carried?.id ?? null}
+              lifted={lifted}
+            />
             {state.dice &&
               diceFaces.map((v, i) => (
                 <RolledDie
@@ -258,6 +269,8 @@ function PlayView() {
               selected={selected}
               counts={counts}
               dragOver={drag?.over ?? null}
+              hover={hover}
+              onHover={setHover}
               onDrop={(p) => store.moveTo(p)}
               onStartDrag={start}
             />

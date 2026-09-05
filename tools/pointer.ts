@@ -124,6 +124,31 @@ await page.waitForTimeout(250)
   }
 }
 
+/* ---- a checker under the cursor lifts ------------------------------------ */
+{
+  await readyToMove()
+  const [hop] = await hops()
+  if (hop) {
+    const [from] = hop
+    // Park the pointer well away first: the previous test left it somewhere,
+    // and a checker already hovered would make this pass without proving it.
+    await page.mouse.move(5, 5)
+    await page.waitForTimeout(200)
+    const liftedCount = () =>
+      page.evaluate<number>(`document.querySelectorAll('[data-lifted]').length`)
+    const before = await liftedCount()
+    const box = await page.locator(`[data-point="${from}"]`).first().boundingBox()
+    if (box) {
+      await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2)
+      await page.waitForTimeout(250)
+      check(
+        before === 0 && (await liftedCount()) === 1,
+        'hovering a movable point lifts its top checker',
+      )
+    }
+  }
+}
+
 /* ---- the same drag on a MIRRORED board ----------------------------------- */
 /*
  * `home: 'left'` mirrors the entire case, and the drag hook converts pointer
