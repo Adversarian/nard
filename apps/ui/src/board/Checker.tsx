@@ -63,7 +63,11 @@ export function Checker({ side }: { side: Side }) {
 
       {/* Fresh material on the face, so the wall's shading stops at the wall. */}
       <circle cx="0" cy="0" r={r * 0.86} fill={tex} />
-      <circle cx="0" cy="0" r={r * 0.86} fill={`url(#face-${side})`} opacity="0.55" />
+      {/* Light, not paint. Three white washes stacked — face, dish and
+          specular — bleached the bone until it read as a plastic plate with
+          rings on it, which at a large window is exactly where "cheap" lives.
+          The material underneath is doing the work; these only light it. */}
+      <circle cx="0" cy="0" r={r * 0.86} fill={`url(#face-${side})`} opacity="0.38" />
 
       {/* Ebony checkers carry one fine brass line let into the face.
           It is a legibility device before it is decoration: on the bar and on
@@ -107,7 +111,7 @@ export function Checker({ side }: { side: Side }) {
         rx={r * 0.4}
         ry={r * 0.26}
         fill="url(#spec)"
-        opacity={dark ? 0.35 : 0.7}
+        opacity={dark ? 0.3 : 0.45}
         transform={`rotate(-32 ${-r * 0.3} ${-r * 0.36})`}
       />
     </g>

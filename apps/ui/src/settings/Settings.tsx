@@ -3,7 +3,9 @@ import { useSettings, type Theme } from './store'
 import { T, type Lang } from '../i18n'
 import type { HomeSide } from '../board/geometry'
 import { sound } from '../sound/player'
+import { useState } from 'react'
 import { SettingsIcon } from '../chrome/Button'
+import { Glossary } from '../chrome/Glossary'
 
 /**
  * Settings.
@@ -16,6 +18,7 @@ export function Settings() {
   const st = useSettings()
   const t = T(st.lang)
   const fa = st.lang === 'fa'
+  const [glossary, setGlossary] = useState(false)
 
   return (
     <Popover.Root>
@@ -91,9 +94,24 @@ export function Settings() {
                 ]}
               />
             </Row>
+            {/* Reachable during play, not only from the ladder — the words turn
+                up in the turn log and the review, which is where someone is
+                most likely to hit one they do not know. */}
+            <button
+              onClick={() => setGlossary(true)}
+              className="mt-4 w-full rounded-[3px] px-3 py-2 text-start text-xs transition-colors"
+              style={{ border: '1px solid var(--app-line)', color: 'var(--text-dim)' }}
+            >
+              {t('glossary.open')}
+            </button>
           </Popover.Popup>
         </Popover.Positioner>
       </Popover.Portal>
+      {glossary && (
+        <div className="fixed inset-0 z-30">
+          <Glossary lang={st.lang} onClose={() => setGlossary(false)} />
+        </div>
+      )}
     </Popover.Root>
   )
 }

@@ -389,33 +389,68 @@ function Tray() {
   )
 }
 
-/** The khatam band, inset within the case edge on all four sides. */
+/**
+ * The khatam band, inset within the case edge on all four sides.
+ *
+ * MITRED AT THE CORNERS, like every piece of framing ever made. Each side is a
+ * trapezoid whose ends are cut at 45 degrees, so the four bands meet corner to
+ * corner instead of one running over another.
+ *
+ * They were four rectangles first, and the overlap at each corner is one of
+ * those details that is invisible until you look and then impossible to unsee —
+ * marquetry is cut and fitted, and butting one length over another is what a
+ * printed border does. It costs four polygons instead of four rects.
+ */
 function Inlay({ inset }: { inset: number }) {
   const w = GEO.inlayW
+  const x0 = inset
+  const y0 = inset
+  const x1 = BOARD_W - inset
+  const y1 = BOARD_H - inset
+  const poly = (pts: number[][]) => pts.map(([x, y]) => `${x},${y}`).join(' ')
+
   return (
     <g>
-      <rect x={inset} y={inset} width={BOARD_W - inset * 2} height={w} fill="url(#khatam-h)" />
-      <rect
-        x={inset}
-        y={BOARD_H - inset - w}
-        width={BOARD_W - inset * 2}
-        height={w}
+      <polygon
+        points={poly([[x0, y0], [x1, y0], [x1 - w, y0 + w], [x0 + w, y0 + w]])}
         fill="url(#khatam-h)"
       />
-      <rect x={inset} y={inset} width={w} height={BOARD_H - inset * 2} fill="url(#khatam-v)" />
-      <rect
-        x={BOARD_W - inset - w}
-        y={inset}
-        width={w}
-        height={BOARD_H - inset * 2}
+      <polygon
+        points={poly([[x0, y1], [x1, y1], [x1 - w, y1 - w], [x0 + w, y1 - w]])}
+        fill="url(#khatam-h)"
+      />
+      <polygon
+        points={poly([[x0, y0], [x0, y1], [x0 + w, y1 - w], [x0 + w, y0 + w]])}
         fill="url(#khatam-v)"
       />
+      <polygon
+        points={poly([[x1, y0], [x1, y1], [x1 - w, y1 - w], [x1 - w, y0 + w]])}
+        fill="url(#khatam-v)"
+      />
+      {/* the mitre joints themselves, as fine dark cuts */}
+      {[
+        [[x0, y0], [x0 + w, y0 + w]],
+        [[x1, y0], [x1 - w, y0 + w]],
+        [[x0, y1], [x0 + w, y1 - w]],
+        [[x1, y1], [x1 - w, y1 - w]],
+      ].map(([a, b], i) => (
+        <line
+          key={i}
+          x1={a![0]}
+          y1={a![1]}
+          x2={b![0]}
+          y2={b![1]}
+          stroke="#000"
+          strokeOpacity="0.45"
+          strokeWidth="0.012"
+        />
+      ))}
       {/* the band is let into the timber, so it sits below the surface */}
       <rect
-        x={inset}
-        y={inset}
-        width={BOARD_W - inset * 2}
-        height={BOARD_H - inset * 2}
+        x={x0}
+        y={y0}
+        width={x1 - x0}
+        height={y1 - y0}
         fill="none"
         stroke="#000"
         strokeOpacity="0.4"

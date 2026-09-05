@@ -403,9 +403,9 @@ function checkerMaterial(side: 'light' | 'dark') {
         say the middle is not flat.
       */}
       <radialGradient id={`dish-${side}`} cx="0.66" cy="0.72" r="0.8">
-        <stop offset="0" stopColor="#fff" stopOpacity={dark ? 0.07 : 0.2} />
+        <stop offset="0" stopColor="#fff" stopOpacity={dark ? 0.06 : 0.12} />
         <stop offset="0.55" stopColor="#fff" stopOpacity="0" />
-        <stop offset="1" stopColor="#000" stopOpacity={dark ? 0.22 : 0.1} />
+        <stop offset="1" stopColor="#000" stopOpacity={dark ? 0.22 : 0.12} />
       </radialGradient>
     </g>
   )
