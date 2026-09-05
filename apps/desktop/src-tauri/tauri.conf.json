@@ -13,9 +13,9 @@
     "windows": [
       {
         "label": "main",
-        "title": "nard — نرد",
-        "width": 1180,
-        "height": 760,
+        "title": "nard \u2014 \u0646\u0631\u062f",
+        "width": 1600,
+        "height": 1000,
         "minWidth": 960,
         "minHeight": 640,
         "center": true,

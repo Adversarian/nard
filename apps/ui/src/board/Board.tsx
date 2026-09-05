@@ -110,28 +110,31 @@ export function Board({
 
 /* -------------------------------------------------------------------------- */
 
-/** The wooden body, and the rounded-over outer arris that catches the light. */
+/**
+ * The wooden body.
+ *
+ * A photograph of walnut, relit. The texture is laid flat and then `lightsweep`
+ * — pure white-to-black with no hue in it — supplies the single upper-left
+ * light on top, so one swatch serves any lighting the board needs and the
+ * material still reads as the same piece of timber across every theme.
+ *
+ * `Tint` is what makes the other two themes possible without three sets of
+ * photographs: `color` blending takes hue and saturation from the tint and
+ * LUMINOSITY from the wood underneath, so the grain survives being recoloured.
+ */
 function Case() {
   return (
     <g>
-      <rect x="0" y="0" width={BOARD_W} height={BOARD_H} rx="0.2" fill="url(#wood)" />
-      <rect
-        x="0"
-        y="0"
-        width={BOARD_W}
-        height={BOARD_H}
-        rx="0.2"
-        filter="url(#grain)"
-        opacity="0.26"
-        style={{ mixBlendMode: 'overlay' }}
-      />
+      <rect x="0" y="0" width={BOARD_W} height={BOARD_H} rx="0.2" fill="url(#tex-case)" />
+      <Tint x={0} y={0} w={BOARD_W} h={BOARD_H} rx={0.2} kind="case" />
+      <rect x="0" y="0" width={BOARD_W} height={BOARD_H} rx="0.2" fill="url(#lightsweep)" />
       {/* lit top-left arris */}
       <path
         d={`M 0.2 ${BOARD_H} L 0.2 0.2 Q 0.2 0.06 0.34 0.06 L ${BOARD_W - 0.2} 0.06`}
         fill="none"
-        stroke="var(--frame-hi)"
-        strokeOpacity="0.55"
-        strokeWidth="0.045"
+        stroke="#fff"
+        strokeOpacity="0.16"
+        strokeWidth="0.05"
       />
       {/* shadowed bottom-right arris */}
       <path
@@ -139,26 +142,68 @@ function Case() {
         fill="none"
         stroke="#000"
         strokeOpacity="0.5"
-        strokeWidth="0.06"
+        strokeWidth="0.07"
       />
     </g>
   )
 }
 
-/** The playing surface, before anything is inlaid into it. */
+/**
+ * Recolour a photographed surface for the current theme.
+ *
+ * Two layers, because one is not enough: `color` blending can change a
+ * material's hue but never its lightness, so a near-black rosewood stays
+ * near-black however it is tinted. `lift` is a plain white wash underneath it,
+ * which is what lets the paper theme have a pale field at all.
+ */
+function Tint({
+  x,
+  y,
+  w,
+  h,
+  rx = 0,
+  kind,
+}: {
+  x: number
+  y: number
+  w: number
+  h: number
+  rx?: number
+  kind: 'case' | 'field'
+}) {
+  return (
+    <>
+      <rect
+        x={x}
+        y={y}
+        width={w}
+        height={h}
+        rx={rx}
+        fill="#fff"
+        style={{ opacity: `var(--${kind}-lift, 0)` }}
+      />
+      <rect
+        x={x}
+        y={y}
+        width={w}
+        height={h}
+        rx={rx}
+        style={{
+          fill: `var(--${kind}-tint, transparent)`,
+          opacity: `var(--${kind}-tint-a, 0)`,
+          mixBlendMode: 'color',
+        }}
+      />
+    </>
+  )
+}
+
+/** The playing surface: dark polished rosewood, relit and tinted per theme. */
 function Field() {
   return (
     <g>
-      <rect x={FIELD_X} y={FIELD_Y} width={GEO.innerW} height={GEO.innerH} fill="var(--field)" />
-      <rect
-        x={FIELD_X}
-        y={FIELD_Y}
-        width={GEO.innerW}
-        height={GEO.innerH}
-        filter="url(#end-grain)"
-        opacity="0.09"
-        style={{ mixBlendMode: 'overlay' }}
-      />
+      <rect x={FIELD_X} y={FIELD_Y} width={GEO.innerW} height={GEO.innerH} fill="url(#tex-field)" />
+      <Tint x={FIELD_X} y={FIELD_Y} w={GEO.innerW} h={GEO.innerH} kind="field" />
       <rect x={FIELD_X} y={FIELD_Y} width={GEO.innerW} height={GEO.innerH} fill="url(#sheen)" />
     </g>
   )
@@ -185,12 +230,13 @@ function Points() {
         const d = pointPath(g)
         return (
           <g key={p}>
-            <path d={d} fill={`url(#point-${a ? 'a' : 'b'}-${g.top ? 'top' : 'bot'})`} />
+            <path d={d} fill={`url(#mat-${a ? 'a' : 'b'})`} />
+            <path d={d} fill={`url(#tipfade-${g.top ? 'top' : 'bot'})`} />
             <path
               d={d}
               fill="none"
               stroke="var(--point-seam)"
-              strokeOpacity="0.28"
+              strokeOpacity="0.3"
               strokeWidth="0.014"
             />
           </g>
@@ -247,16 +293,9 @@ function Bar() {
   const x = FIELD_X + 6 * GEO.u
   return (
     <g>
-      <rect x={x} y={FIELD_Y} width={GEO.barW} height={GEO.innerH} fill="url(#wood-bar)" />
-      <rect
-        x={x}
-        y={FIELD_Y}
-        width={GEO.barW}
-        height={GEO.innerH}
-        filter="url(#grain)"
-        opacity="0.1"
-        style={{ mixBlendMode: 'overlay' }}
-      />
+      <rect x={x} y={FIELD_Y} width={GEO.barW} height={GEO.innerH} fill="url(#tex-case)" />
+      <Tint x={x} y={FIELD_Y} w={GEO.barW} h={GEO.innerH} kind="case" />
+      <rect x={x} y={FIELD_Y} width={GEO.barW} height={GEO.innerH} fill="url(#bar-light)" />
       {/* the field falls away into shadow on both sides of it */}
       <rect x={x - 0.09} y={FIELD_Y} width={GEO.barW + 0.18} height={GEO.innerH} fill="url(#edge-h)" />
       {/* a brass wire down the centre, as on the case seam of a real board */}
@@ -279,19 +318,12 @@ function Tray() {
   const dx = FIELD_X + GEO.innerW
   return (
     <g>
-      <rect x={dx} y={FIELD_Y} width={trayDivider} height={innerH} fill="url(#wood)" />
+      <rect x={dx} y={FIELD_Y} width={trayDivider} height={innerH} fill="url(#tex-case)" />
+      <Tint x={dx} y={FIELD_Y} w={trayDivider} h={innerH} kind="case" />
       <rect x={dx - 0.07} y={FIELD_Y} width={trayDivider + 0.14} height={innerH} fill="url(#edge-h)" />
 
-      <rect x={TRAY_X} y={FIELD_Y} width={trayW} height={innerH} fill="var(--field)" />
-      <rect
-        x={TRAY_X}
-        y={FIELD_Y}
-        width={trayW}
-        height={innerH}
-        filter="url(#end-grain)"
-        opacity="0.07"
-        style={{ mixBlendMode: 'overlay' }}
-      />
+      <rect x={TRAY_X} y={FIELD_Y} width={trayW} height={innerH} fill="url(#tex-field)" />
+      <Tint x={TRAY_X} y={FIELD_Y} w={trayW} h={innerH} kind="field" />
       <rect x={TRAY_X} y={FIELD_Y} width={trayW} height={innerH} fill="url(#well)" />
       {/* brass divider between the two players' halves of the tray */}
       <line

@@ -145,9 +145,22 @@ function summarise(trace: Sample[], moverId: string) {
    * printing it as a verdict.
    */
   const trustworthy = medianGap > 0 && medianGap <= 25
+  /*
+   * How much of the reading is sampling, not animation.
+   *
+   * Both ends of the settle measurement are pinned to whichever sample happened
+   * to land nearest the event, so the true value sits within about one sample
+   * interval of each endpoint. Reporting the midpoint as if it were exact is
+   * what made a 60fps run call an unchanged spring OFF at 167ms one time and
+   * in-spec at 233ms the next: the gate on median gap catches a SLOW sampler,
+   * but the error here comes from where the samples fell, which a fine gap does
+   * not fix.
+   */
+  const settleSlop = Math.round(medianGap * 2)
 
   return {
     trustworthy,
+    settleSlop,
     frames: series.length,
     medianFrameMs: +medianGap.toFixed(1),
     worstFrameMs: +worstGap.toFixed(1),
@@ -258,7 +271,9 @@ for (const it of list) {
   //            information; a single low reading is not a performance bug.
   //
   // Because the sampler is unreliable, the settle figure is only reported as a
-  // PASS or FAIL when samples came fast enough to bracket it. At 50-60ms
+  // PASS or FAIL when samples came fast enough to bracket it, and even then only
+  // when the whole +/- interval falls outside the band — a midpoint alone is
+  // not a measurement. At 50-60ms
   // between samples the slop is a quarter of the thing being measured, and the
   // bear-off case was duly reported as 150ms against a 257ms spring that its
   // own trace showed running for ~250ms. A harness that cries wolf gets
@@ -270,8 +285,8 @@ for (const it of list) {
           `${it.id}  (scene: ${it.scene}, ${s.frames} frames sampled)`,
           `  lift peak scale     ${s.liftPeakScale}   spec 1.05`,
           s.trustworthy
-            ? `  settle after move   ${ok(s.settleAfterMoveMs, lo, hi)}${s.settleAfterMoveMs}ms  spec ${lo}-${hi}ms`
-            : `  settle after move   ....${s.settleAfterMoveMs}ms  spec ${lo}-${hi}ms — SAMPLING TOO COARSE (${s.medianFrameMs}ms between samples) to call this`,
+            ? `  settle after move   ${ok(s.settleAfterMoveMs + s.settleSlop, lo, 1e9) === 'ok  ' && ok(s.settleAfterMoveMs - s.settleSlop, -1e9, hi) === 'ok  ' ? 'ok  ' : 'OFF '}${s.settleAfterMoveMs}ms +/-${s.settleSlop}  spec ${lo}-${hi}ms`
+            : `  settle after move   ....${s.settleAfterMoveMs}ms +/-${s.settleSlop}  spec ${lo}-${hi}ms — SAMPLING TOO COARSE (${s.medianFrameMs}ms between samples) to call this`,
           `  overshoot           ${ok(s.overshootPct, olo, ohi)}${s.overshootPct}%    spec ${olo}-${ohi}% (60Hz sampling under-reads the peak)`,
           `  frame pacing        ....${s.fps}fps (median ${s.medianFrameMs}ms, worst ${s.worstFrameMs}ms)  informational only`,
           `  travel distance     ${s.travelDistance} board units`,

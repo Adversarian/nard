@@ -202,7 +202,7 @@ function PlayView() {
         drifted every time the score changed width. Everything that used to sit
         in the middle now lives in the rail, where it has room.
       */}
-      <header className="flex shrink-0 items-center justify-between px-6 py-3">
+      <header className="flex shrink-0 items-center justify-between px-6 py-3 2xl:px-10 2xl:py-5">
         <button
           onClick={() => store.toLadder()}
           className="py-1 transition-opacity hover:opacity-75"
@@ -213,7 +213,13 @@ function PlayView() {
         <Settings />
       </header>
 
-      <main className="flex min-h-0 flex-1 gap-5 px-5 pb-5">
+      {/*
+        More room as the window grows. Sized for a 1920x1080 screen, where the
+        board would otherwise fit its height exactly and sit hard against the
+        top and bottom edges of the window — technically the largest it can be,
+        and it looks cramped rather than generous. A board wants a margin.
+      */}
+      <main className="flex min-h-0 flex-1 gap-5 px-5 pb-5 2xl:gap-8 2xl:px-10 2xl:pb-9">
         {(state.phase === 'game-over' || state.phase === 'match-over') && (
           <Outcome
             state={state}
