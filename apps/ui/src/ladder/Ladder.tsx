@@ -123,34 +123,56 @@ export function Ladder({
 
       <PrHistory lang={lang} />
 
-      {/* One segmented control, not five separate buttons — the choice is one
-          value out of a set, and five outlined boxes read as five actions. */}
-      <div className="flex items-center gap-3">
-        <span
-          className="text-[0.65rem] uppercase tracking-[0.18em]"
-          style={{ color: 'var(--text-dim)' }}
-        >
-          {fa ? 'طول مسابقه' : 'Match length'}
-        </span>
-        <div
-          className="flex overflow-hidden rounded-[3px]"
-          style={{ border: '1px solid var(--app-line)' }}
-        >
-          {MATCH_LENGTHS.map((n) => (
-            <button
-              key={n}
-              onClick={() => setLength(n)}
-              className="px-3.5 py-1.5 text-sm tabular-nums transition-colors"
-              style={
-                length === n
-                  ? { background: 'var(--inlay)', color: 'var(--app-bg)' }
-                  : { color: 'var(--text-dim)' }
-              }
-            >
-              {digits(n, lang)}
-            </button>
-          ))}
+      {/*
+        One segmented control, not five separate buttons — the choice is one
+        value out of a set, and five outlined boxes read as five actions.
+
+        And it SAYS WHAT IT DOES. It was labelled "Match length" over a row of
+        bare numbers, which assumes the player already knows that backgammon is
+        scored in points, that a match runs until someone reaches a total, and
+        that the number is that total. The first person to use this asked what
+        it was for, which is the only test that matters.
+      */}
+      <div className="flex flex-col items-center gap-3">
+        <div className="flex items-center gap-3">
+          <span
+            className="text-[0.6rem] uppercase tracking-[0.2em]"
+            style={{ color: 'var(--text-dim)' }}
+          >
+            {fa ? 'مسابقه تا' : 'Match to'}
+          </span>
+          <div
+            className="flex overflow-hidden rounded-[3px]"
+            style={{ border: '1px solid var(--app-line)' }}
+          >
+            {MATCH_LENGTHS.map((n) => (
+              <button
+                key={n}
+                onClick={() => setLength(n)}
+                className="px-4 py-1.5 text-sm tabular-nums transition-colors"
+                style={
+                  length === n
+                    ? { background: 'var(--inlay)', color: 'var(--app-bg)' }
+                    : { color: 'var(--text-dim)' }
+                }
+              >
+                {digits(n, lang)}
+              </button>
+            ))}
+          </div>
+          <span
+            className="text-[0.6rem] uppercase tracking-[0.2em]"
+            style={{ color: 'var(--text-dim)' }}
+          >
+            {fa ? 'امتیاز' : 'points'}
+          </span>
         </div>
+        <p
+          className="max-w-md text-center text-xs leading-relaxed"
+          style={{ color: 'var(--text-dim)', opacity: 0.85 }}
+        >
+          {s.matchLengthHint(digits(length, lang))}
+        </p>
       </div>
       <span className="sr-only">{s.appName}</span>
     </div>

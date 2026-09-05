@@ -167,27 +167,52 @@ Specific consequences, each of which was got wrong at least once:
 - **Cast shadows are `--shadow`, never black.** A black shadow on a warm board
   reads as a hole punched through it.
 
-### Materials
+### Materials are photographed, not computed
 
-Everything is procedural — SVG gradients and filters, no image assets.
+**Wood, bone, ebony and khatam marquetry are generated image swatches** under
+`apps/ui/src/assets/textures/`. See the PROVENANCE.md there for how they were
+made and what to watch for if you regenerate them.
 
-- **Wood** is two stacked `feTurbulence` layers: a broad low-frequency one for
-  the tonal drift of a sawn plank, and a fine high-frequency one for the pore
-  lines, both stretched hard along the grain. One layer never reads as wood.
-  Push the red channel into all three and pin alpha to 1 before blending —
-  turbulence varies alpha too, and leaving that in gives blotches that read as
-  dirt.
-- **The khatam band** is a chain of bone and brass lozenges on ebony, wired top
-  and bottom. **What actually renders decides the motif**: the band is ~11
-  physical pixels across, and a twelve-sided star at that size is mush — it came
-  out looking like a row of asterisks and the board read as a cinema marquee. A
-  lozenge chain is equally authentic and survives being small.
-- **A checker** is, in order: cast shadow, cylindrical wall (lit upper-left —
-  this is the layer that makes it an object), top face, one turned groove, the
-  dish, and a soft specular bloom. Not a stack of concentric strokes.
-- **Die pips are drilled, not printed** — dark on the upper-left inner wall,
-  catching light on the lower-right. That inversion is the whole reason a pip
-  reads as a hole.
+This replaced three successive attempts at procedural wood — a gradient, then
+multiplied turbulence, then hand-drawn growth rings pushed around by a
+displacement map. Each was better than the last and none of them was wood.
+Real timber has figure that doubles back on itself and noise has no memory, so
+it cannot produce that at any octave count. **Do not put procedural wood back.**
+
+Two rules keep the swatches usable:
+
+- **They carry MATERIAL ONLY; lighting is drawn over them.** Each was prompted
+  flat and evenly lit, and `#lightsweep` — pure white-to-black with no hue in it
+  — supplies the single upper-left light on top. A swatch with its own lighting
+  baked in cannot be relit and will fight every shadow on the board.
+- **Themes recolour them rather than replacing them.** `Tint` in `Board.tsx`
+  lays a white wash (changes lightness) and then a `color`-blended tint (changes
+  hue, keeps lightness). Both are needed: `color` blending cannot make a
+  near-black rosewood pale however much hue you push into it, which is the whole
+  reason the paper theme has `--field-lift`. A new theme is four tokens, not
+  five new image files.
+
+Where each is used, and why:
+
+- **The case and the field are laid as ONE PIECE each**, cut to the exact aspect
+  of the surface they cover, so neither ever tiles. They are the two largest
+  areas on the board and a repeat would be obvious on both.
+- **The band, bone and ebony tile**, and were made seamless by cross-fading each
+  tile's trailing edge back over its leading one.
+- **Checker and die material is anchored to the BOARD, not to the piece** —
+  about three checker diameters per tile — so neighbouring checkers show
+  different parts of the material. Thirty identical copies of one patch is what
+  reads as computer-generated, however good the swatch is.
+- **The points are stained bone**: the same swatch as the checkers with the
+  point colour multiplied over it, which is what dyeing bone actually does and
+  leaves its mottling showing through. Flat colour was the last synthetic
+  surface on the board and against real timber it was the only thing still
+  reading as vector art.
+
+Still drawn rather than photographed, because they are lighting and not
+material: the checker's rim, dish and specular; the drilled die pip (dark on the
+upper-left inner wall, catching light on the lower-right — that inversion is the
+whole reason a pip reads as a hole); every cast shadow.
 
 ### Filters are for the static board only
 
@@ -316,21 +341,28 @@ defaults to on, single volume control, and is silent when the window is unfocuse
 
 ## Assets
 
-**There are no texture images.** Wood, felt, the inlay band and every material
-on the board are generated at render time from SVG gradients and filters, so a
-theme is a palette swap and nothing has to be re-exported when a colour changes.
-Do not add a texture file to solve a problem a gradient can solve.
+Committed under `apps/ui/src/assets/`, each with a `PROVENANCE.md` beside it:
 
-The committed assets are: the six opponent portraits
-(`assets/portraits/*.webp`, generated with `gpt-image-2`), the Vazirmatn
-variable font, and the sound set. Provenance and licensing for each are in a
-`PROVENANCE.md` beside them.
+| | What | Licence |
+| --- | --- | --- |
+| `textures/` | five material swatches, generated with `gpt-image-2` | ours |
+| `portraits/` | the six opponents, generated with `gpt-image-2` | ours |
+| `fonts/` | Vazirmatn, variable | SIL OFL |
+| `sound/` | the sound set | CC0 only |
 
-**Sound is CC0 library material**, not recordings of real equipment — see
-`assets/sound/PROVENANCE.md`. Nothing that is not CC0 may be added. Events are
-named (`place`, `hit`, `bar`, `off`, `dice`, `cube`, `win`); components emit
-events and never name a file. Events that repeat many times a game carry several
-samples, because one sample played identically reads as a rattle.
+**Sound is CC0 library material**, not recordings of real equipment. Nothing
+that is not CC0 may be added. Components emit named EVENTS (`place`, `hit`,
+`bar`, `off`, `dice`, `cube`, `win`) and never name a file; events that repeat
+many times a game carry several samples, because one sample played identically
+reads as a rattle.
+
+Keep `textures/` under about 300 KB and each font subset small. It is a desktop
+game, not a texture demo.
+
+**When generating images: the requested size is advisory.** The model quantises
+to its own set of aspect ratios and picks its own resolution — ask for 1536×1024
+and you may get 1672×941. Generate larger than you need and crop. This is also
+why the portraits are framed 4:5 in CSS rather than trusting the returned file.
 
 ## Restraint checklist
 

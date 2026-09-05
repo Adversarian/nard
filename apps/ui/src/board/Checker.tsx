@@ -29,6 +29,17 @@ export type Side = 'light' | 'dark'
 export function Checker({ side }: { side: Side }) {
   const r = CHECKER_R
   const dark = side === 'dark'
+  /*
+   * Real bone and real ebony, under the lighting.
+   *
+   * The material is drawn first and the shading gradients go over it at reduced
+   * opacity, so what you see is the photograph relit rather than a gradient
+   * with a photograph faintly behind it. The pattern is anchored to the BOARD,
+   * not to the checker, so neighbouring pieces show different parts of the
+   * material — thirty identical copies of one patch is the thing that reads as
+   * computer-generated no matter how good the swatch is.
+   */
+  const tex = dark ? 'url(#tex-ebony)' : 'url(#tex-bone)'
 
   return (
     <g>
@@ -36,7 +47,8 @@ export function Checker({ side }: { side: Side }) {
           than the checker so the penumbra shows past the edge. */}
       <ellipse cx={r * 0.09} cy={r * 0.15} rx={r * 1.16} ry={r * 1.12} fill="url(#cast)" />
 
-      <circle cx="0" cy="0" r={r} fill={`url(#rim-${side})`} />
+      <circle cx="0" cy="0" r={r} fill={tex} />
+      <circle cx="0" cy="0" r={r} fill={`url(#rim-${side})`} opacity="0.6" />
       {/* A contour, so the lower-right edge still has a silhouette where the
           wall gradient goes darker than the point beneath it. */}
       <circle
@@ -49,7 +61,9 @@ export function Checker({ side }: { side: Side }) {
         strokeWidth="0.012"
       />
 
-      <circle cx="0" cy="0" r={r * 0.86} fill={`url(#face-${side})`} />
+      {/* Fresh material on the face, so the wall's shading stops at the wall. */}
+      <circle cx="0" cy="0" r={r * 0.86} fill={tex} />
+      <circle cx="0" cy="0" r={r * 0.86} fill={`url(#face-${side})`} opacity="0.55" />
 
       {/* Ebony checkers carry one fine brass line let into the face.
           It is a legibility device before it is decoration: on the bar and on
@@ -116,7 +130,8 @@ export function Slab({ side }: { side: Side }) {
   return (
     <g>
       <rect x={-w / 2} y={-h / 2 + h * 0.28} width={w} height={h} rx={rx} fill="url(#cast)" opacity="0.7" />
-      <rect x={-w / 2} y={-h / 2} width={w} height={h} rx={rx} fill={`url(#rim-${side})`} />
+      <rect x={-w / 2} y={-h / 2} width={w} height={h} rx={rx} fill={dark ? 'url(#tex-ebony)' : 'url(#tex-bone)'} />
+      <rect x={-w / 2} y={-h / 2} width={w} height={h} rx={rx} fill={`url(#rim-${side})`} opacity="0.6" />
       {/* the lit top arris of the disc's edge, which is what you actually see
           of a checker lying on its side */}
       <rect

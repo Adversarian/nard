@@ -86,7 +86,25 @@ export function Die({
         rx={size * 0.4}
         fill="url(#cast)"
       />
-      <rect x={x - half} y={y - half} width={size} height={size} rx={r} fill={`url(#die-${side})`} />
+      {/* Turned from the same bone and ebony as the checkers, and drawn the
+          same way: material first, lighting over it. */}
+      <rect
+        x={x - half}
+        y={y - half}
+        width={size}
+        height={size}
+        rx={r}
+        fill={light ? 'url(#tex-bone)' : 'url(#tex-ebony)'}
+      />
+      <rect
+        x={x - half}
+        y={y - half}
+        width={size}
+        height={size}
+        rx={r}
+        fill={`url(#die-${side})`}
+        opacity="0.55"
+      />
       {/* the rounded-over arris, lit along the top-left run only */}
       <path
         d={`M ${x - half + r * 0.3} ${y + half - r * 0.3} L ${x - half + r * 0.3} ${y - half + r} Q ${x - half + r * 0.3} ${y - half + r * 0.3} ${x - half + r} ${y - half + r * 0.3} L ${x + half - r * 0.3} ${y - half + r * 0.3}`}

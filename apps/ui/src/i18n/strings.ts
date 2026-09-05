@@ -52,6 +52,11 @@ export interface Strings {
   readonly tookIt: string
   readonly passed: string
   readonly chooseOpponent: string
+  readonly playTo: string
+  readonly barPoint: string
+  readonly offTray: string
+  readonly hit: string
+  readonly matchLengthHint: (n: string) => string
 }
 
 const FA_DIGITS = ['۰', '۱', '۲', '۳', '۴', '۵', '۶', '۷', '۸', '۹']
@@ -121,6 +126,12 @@ const en: Strings = {
   tookIt: 'Took',
   passed: 'Passed',
   chooseOpponent: 'Choose opponent',
+  playTo: 'play to',
+  barPoint: 'bar',
+  offTray: 'off',
+  hit: 'hit',
+  matchLengthHint: (n) =>
+    `First to ${n} points takes the match. A gammon is worth two points, a backgammon three, and the doubling cube multiplies whatever the game is worth.`,
 }
 
 const fa: Strings = {
@@ -162,6 +173,12 @@ const fa: Strings = {
   tookIt: 'قبول کرد',
   passed: 'پاس داد',
   chooseOpponent: 'انتخاب حریف',
+  playTo: 'تا',
+  barPoint: 'بار',
+  offTray: 'خارج',
+  hit: 'زد',
+  matchLengthHint: (n) =>
+    `هر کس زودتر ${n} امتیاز بگیرد مسابقه را می‌برد. مارس دو امتیاز دارد، مارس ترکی سه، و کوب امتیاز بازی را چند برابر می‌کند.`,
 }
 
 export const STRINGS: Readonly<Record<Lang, Strings>> = { en, fa }

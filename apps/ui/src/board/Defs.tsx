@@ -1,4 +1,26 @@
-import { GEO } from './geometry'
+import { BOARD_H, BOARD_W, FIELD_X, FIELD_Y, GEO } from './geometry'
+
+/*
+ * Real materials, photographed rather than computed.
+ *
+ * Wood, bone, ebony and khatam marquetry all have structure no amount of
+ * turbulence reproduces — growth rings that wander and double back, the
+ * mottling in a piece of bone, a brass wire catching light along one edge only.
+ * The procedural versions were the single biggest reason the board read as a
+ * diagram of a board rather than as a board.
+ *
+ * Provenance and licensing: assets/textures/PROVENANCE.md.
+ *
+ * The textures carry MATERIAL ONLY. Lighting is still drawn over them with the
+ * gradients below, so the single upper-left light survives — they were prompted
+ * flat and evenly lit for exactly that reason, because a photograph with its own
+ * lighting baked in cannot be relit.
+ */
+import caseTex from '../assets/textures/case.webp'
+import fieldTex from '../assets/textures/field.webp'
+import bandTex from '../assets/textures/band.webp'
+import boneTex from '../assets/textures/bone.webp'
+import ebonyTex from '../assets/textures/ebony.webp'
 
 /**
  * Shared SVG materials: wood, khatam inlay, turned checkers, dice, shadows.
@@ -32,86 +54,46 @@ import { GEO } from './geometry'
  * See Board.tsx, where the case is filtered and the children deliberately are
  * not.
  */
+/** The band tile's own aspect, so it is laid at its true proportions. */
+const BAND_W = GEO.inlayW * (304 / 178)
+
 export function BoardDefs() {
   return (
     <defs>
       {/* --- wood ------------------------------------------------------- */}
       {/*
-        The case is lit from above-left, so the face carries a diagonal
-        gradient rather than a vertical one. Three stops, not two: real timber
-        under a single light has a bright shoulder well before the edge.
+        There is no procedural wood here any more.
+
+        It went through a linear gradient, then two layers of multiplied
+        turbulence, then hand-drawn growth rings pushed around by a displacement
+        map — each better than the last, and none of them wood. Real timber has
+        figure that doubles back on itself, and noise cannot produce that
+        because noise has no memory. The photographed swatches above do the job
+        in a fraction of the code; what is left here is the LIGHTING that gets
+        laid over them.
       */}
-      <linearGradient id="wood" x1="0.05" y1="0" x2="0.85" y2="1">
-        <stop offset="0" stopColor="var(--frame-hi)" />
-        <stop offset="0.28" stopColor="var(--frame)" />
-        <stop offset="0.78" stopColor="var(--frame)" />
-        <stop offset="1" stopColor="var(--frame-lo)" />
+
+      {/* --- relighting a photographed surface --------------------------- */}
+      {/*
+        Light ONLY: white on the side facing the lamp, black on the side facing
+        away, nothing in between and no hue anywhere. Laid over a photographed
+        material it relights it without recolouring it, which is what lets one
+        walnut swatch serve a board lit from the upper left.
+      */}
+      <linearGradient id="lightsweep" x1="0.05" y1="0" x2="0.9" y2="1">
+        <stop offset="0" stopColor="#fff" stopOpacity="0.17" />
+        <stop offset="0.32" stopColor="#fff" stopOpacity="0" />
+        <stop offset="0.7" stopColor="#000" stopOpacity="0.1" />
+        <stop offset="1" stopColor="#000" stopOpacity="0.45" />
       </linearGradient>
 
-      {/*
-        Grain, in two layers, because one never reads as wood.
-        `figure` is the broad tonal drift of a sawn plank; `pore` is the fine
-        line structure on top of it. Both are stretched hard along the grain
-        direction — the anisotropy IS the effect.
-
-        The colour matrix pushes the red channel into all three and pins alpha
-        to 1, so what comes out is predictable grey the overlay blend can act
-        on. Turbulence varies alpha too, and leaving that in gives a blotchy
-        result that reads as dirt rather than grain.
-      */}
-      <filter id="grain" x="0" y="0" width="100%" height="100%">
-        <feTurbulence type="fractalNoise" baseFrequency="0.05 1.1" numOctaves="3" seed="7" result="figure" />
-        <feTurbulence type="fractalNoise" baseFrequency="0.35 9" numOctaves="2" seed="11" result="pore" />
-        <feBlend in="figure" in2="pore" mode="multiply" result="mixed" />
-        <feColorMatrix
-          in="mixed"
-          type="matrix"
-          values="1 0 0 0 0
-                  1 0 0 0 0
-                  1 0 0 0 0
-                  0 0 0 0 1"
-        />
-        <feComponentTransfer>
-          <feFuncR type="linear" slope="2.2" intercept="-0.55" />
-          <feFuncG type="linear" slope="2.2" intercept="-0.55" />
-          <feFuncB type="linear" slope="2.2" intercept="-0.55" />
-        </feComponentTransfer>
-      </filter>
-
-      {/*
-        Field texture: fine and isotropic.
-
-        NOT felt, despite what this used to be called. A khatam board has no
-        cloth on it anywhere — the playing surface is polished wood or khatam
-        under several coats of lacquer, mirror-finished, and the only felt on the
-        object is glued under the checkers. Every piece of khatam is also cut
-        ACROSS the rod, so what you see is end grain: a tight uniform speckle,
-        never long figure. Hence isotropic noise here and directional grain only
-        on the case.
-      */}
-      <filter id="end-grain" x="0" y="0" width="100%" height="100%">
-        <feTurbulence type="fractalNoise" baseFrequency="7" numOctaves="3" seed="3" />
-        <feColorMatrix
-          type="matrix"
-          values="1 0 0 0 0
-                  1 0 0 0 0
-                  1 0 0 0 0
-                  0 0 0 0 1"
-        />
-        <feComponentTransfer>
-          <feFuncR type="linear" slope="1.6" intercept="-0.3" />
-          <feFuncG type="linear" slope="1.6" intercept="-0.3" />
-          <feFuncB type="linear" slope="1.6" intercept="-0.3" />
-        </feComponentTransfer>
-      </filter>
-
-      {/* The bar stands between two raised halves, so it takes light on its
-          left shoulder and falls into shadow on the right. */}
-      <linearGradient id="wood-bar" x1="0" y1="0" x2="1" y2="0">
-        <stop offset="0" stopColor="var(--frame-lo)" />
-        <stop offset="0.13" stopColor="var(--frame-hi)" />
-        <stop offset="0.45" stopColor="var(--frame)" />
-        <stop offset="1" stopColor="var(--frame-lo)" />
+      {/* The bar stands between two raised halves: lit on its left shoulder,
+          falling away on the right, and darker overall than the case. */}
+      <linearGradient id="bar-light" x1="0" y1="0" x2="1" y2="0">
+        <stop offset="0" stopColor="#000" stopOpacity="0.55" />
+        <stop offset="0.13" stopColor="#fff" stopOpacity="0.13" />
+        <stop offset="0.45" stopColor="#000" stopOpacity="0.12" />
+        <stop offset="1" stopColor="#000" stopOpacity="0.6" />
       </linearGradient>
 
       {/* --- inset walls ------------------------------------------------ */}
@@ -164,47 +146,108 @@ export function BoardDefs() {
 
       {/* --- khatam inlay ---------------------------------------------- */}
       {/*
-        Brass is the BRIGHTEST material on a khatam surface — brighter than the
-        bone — and the only one with a specular. Flat mid-gold is the documented
-        failure mode; it is what a printed imitation looks like. So the wire
-        gets a highlight across its width rather than a single fill, and it is
-        thin and bright rather than thin and dim.
-      */}
-      <linearGradient id="brass-wire" x1="0" y1="0" x2="0" y2="1">
-        <stop offset="0" stopColor="var(--khatam-brass-lo)" />
-        <stop offset="0.38" stopColor="var(--khatam-brass-hi)" />
-        <stop offset="0.62" stopColor="var(--khatam-brass)" />
-        <stop offset="1" stopColor="var(--khatam-brass-lo)" />
-      </linearGradient>
-      {/*
-        Khatam-kari is built from bundled rods of bone, ebony and brass wire,
-        sliced across the bundle — so the motif is always a tight tessellation
-        of small triangles around a star, never a printed-looking repeat. At
-        the width this band actually renders (a couple of dozen pixels) the
-        readable unit is a chain of six-point stars, so that is what this draws:
-        bone stars on ebony, brass wire between them, and a hairline of brass
-        top and bottom where the band meets the timber.
+        One tiling period of real marquetry, laid along each side of the case.
+         rotates it for the left and right sides so the
+        courses always run along the band rather than across it.
 
-        The old band was a one-way sawtooth. It read as a zigzag ribbon, which
-        is a printed border, not marquetry — the giveaway was that every
-        triangle pointed the same way.
+        The tile was made seamless by folding its trailing edge back over its
+        leading one — generated material is never exactly periodic, and a
+        straight crop shows a hard seam at every repeat.
       */}
-      {khatamBand('khatam-h', false)}
-      {khatamBand('khatam-v', true)}
+      <pattern id="khatam-h" patternUnits="userSpaceOnUse" width={BAND_W} height={GEO.inlayW}>
+        <image href={bandTex} width={BAND_W} height={GEO.inlayW} preserveAspectRatio="none" />
+      </pattern>
+      <pattern
+        id="khatam-v"
+        patternUnits="userSpaceOnUse"
+        width={BAND_W}
+        height={GEO.inlayW}
+        patternTransform="rotate(90)"
+      >
+        <image href={bandTex} width={BAND_W} height={GEO.inlayW} preserveAspectRatio="none" />
+      </pattern>
+
+      {/* --- the case and the playing surface ---------------------------- */}
+      {/* One piece of timber each, at that surface's own aspect ratio, so
+          neither ever tiles and no seam can appear on the two largest areas of
+          the board. */}
+      <pattern id="tex-case" patternUnits="userSpaceOnUse" width={BOARD_W} height={BOARD_H}>
+        <image href={caseTex} width={BOARD_W} height={BOARD_H} preserveAspectRatio="none" />
+      </pattern>
+      <pattern
+        id="tex-field"
+        patternUnits="userSpaceOnUse"
+        width={GEO.innerW}
+        height={GEO.innerH}
+        x={FIELD_X}
+        y={FIELD_Y}
+      >
+        <image href={fieldTex} width={GEO.innerW} height={GEO.innerH} preserveAspectRatio="none" />
+      </pattern>
+
+      {/* --- checker and die materials ----------------------------------- */}
+      {/* Sized to about three checker diameters and anchored to the BOARD, not
+          to each piece, so neighbouring checkers sample different parts of the
+          material instead of showing thirty identical copies of one patch. */}
+      <pattern id="tex-bone" patternUnits="userSpaceOnUse" width="2.4" height="2.4">
+        <image href={boneTex} width="2.4" height="2.4" preserveAspectRatio="none" />
+      </pattern>
+      <pattern id="tex-ebony" patternUnits="userSpaceOnUse" width="2.4" height="2.4">
+        <image href={ebonyTex} width="2.4" height="2.4" preserveAspectRatio="none" />
+      </pattern>
 
       {/* --- points ----------------------------------------------------- */}
       {/*
-        Two effects, both subtle, and the board dies without either:
-
-        `sheen` is a lengthwise falloff — an inlaid point is a flat piece of
-        veneer catching a raking light, brightest where it meets the frame.
-
-        The seam is drawn in Board.tsx as a hairline stroke. Real marquetry
-        has a visible join line where two pieces of veneer meet; without it
-        the points read as painted onto the field rather than let into it.
+        Points are STAINED BONE, not paint.
+        The same bone the checkers are turned from, with the point colour
+        multiplied over it — which is what dyeing bone actually does to it, and
+        it leaves the mottling and the fine flecks showing through. Flat colour
+        was the last synthetic surface on the board, and against real timber it
+        was the only thing still reading as vector art.
+        The colour comes from a token, so the other themes follow for free.
       */}
-      {pointSheen('point-a', 'var(--point-a)', 'var(--point-a-lo)')}
-      {pointSheen('point-b', 'var(--point-b)', 'var(--point-b-lo)')}
+      {(['a', 'b'] as const).map((k) => (
+        <pattern
+          key={k}
+          id={`mat-${k}`}
+          patternUnits="userSpaceOnUse"
+          width="2.4"
+          height="2.4"
+        >
+          <image href={boneTex} width="2.4" height="2.4" preserveAspectRatio="none" />
+          <rect
+            width="2.4"
+            height="2.4"
+            style={{ fill: `var(--point-${k})`, mixBlendMode: 'multiply' }}
+          />
+        </pattern>
+      ))}
+
+      {/*
+        Length falloff, as light rather than colour, so one pair of gradients
+        serves both point colours and every theme.
+
+        EXACTLY vertical — do not tilt. Gradients default to `objectBoundingBox`
+        units, where x scales by the box width and y by the box height, and a
+        point's box is four times taller than it is wide. The gradient VECTOR
+        barely rotates under that, so a small sideways offset looks harmless
+        when you write it; but the iso-lines run perpendicular to the vector and
+        perpendicularity is NOT preserved by a non-uniform scale. Sixteen
+        hundredths of sideways came out as a 33-degree shear, and every point
+        wore a grey diagonal wash across its base.
+      */}
+      <linearGradient id="tipfade-top" x1="0.5" y1="0" x2="0.5" y2="1">
+        <stop offset="0" stopColor="#fff" stopOpacity="0.14" />
+        <stop offset="0.06" stopColor="#000" stopOpacity="0" />
+        <stop offset="0.66" stopColor="#000" stopOpacity="0" />
+        <stop offset="1" stopColor="#000" stopOpacity="0.4" />
+      </linearGradient>
+      <linearGradient id="tipfade-bot" x1="0.5" y1="1" x2="0.5" y2="0">
+        <stop offset="0" stopColor="#fff" stopOpacity="0.14" />
+        <stop offset="0.06" stopColor="#000" stopOpacity="0" />
+        <stop offset="0.66" stopColor="#000" stopOpacity="0" />
+        <stop offset="1" stopColor="#000" stopOpacity="0.4" />
+      </linearGradient>
 
       {/* --- checkers --------------------------------------------------- */}
       {/*
@@ -285,45 +328,6 @@ export function BoardDefs() {
  * from — the light does not flip when the point does, so the base is bright in
  * both cases and the tip falls away.
  */
-function pointSheen(id: string, base: string, low: string) {
-  /*
-   * The gradient runs along the point's AXIS, base to tip, and is EXACTLY
-   * vertical. Do not tilt it.
-   *
-   * Tilting it to pick up the same upper-left light as the rest of the board
-   * is the obvious thing to try, and it fails in a way worth writing down.
-   * Gradients default to `objectBoundingBox` units, where x is scaled by the
-   * box width and y by the box height — and a point's box is about four times
-   * taller than it is wide. The gradient VECTOR barely rotates under that
-   * scaling, so `x1=0.42 x2=0.58` looks nearly vertical when you write it; but
-   * the iso-lines run perpendicular to the vector, and perpendicularity is not
-   * preserved by a non-uniform scale. Those 0.16 units of sideways offset came
-   * out as a 33-degree shear, and every point got a grey diagonal wash across
-   * its base.
-   *
-   * The lip itself is a hairline. At 0.14 of the length it covered half a
-   * checker and read as haze rather than as an edge.
-   */
-  const lip = 0.055
-  const stops = (
-    <>
-      <stop offset="0" stopColor="var(--point-hi)" stopOpacity="0.16" />
-      <stop offset={lip} stopColor={base} />
-      <stop offset="0.66" stopColor={base} />
-      <stop offset="1" stopColor={low} />
-    </>
-  )
-  return (
-    <>
-      <linearGradient id={`${id}-top`} x1="0.5" y1="0" x2="0.5" y2="1" key={`${id}-top`}>
-        {stops}
-      </linearGradient>
-      <linearGradient id={`${id}-bot`} x1="0.5" y1="1" x2="0.5" y2="0" key={`${id}-bot`}>
-        {stops}
-      </linearGradient>
-    </>
-  )
-}
 
 /** Rim, face and dish for one checker colour. */
 function checkerMaterial(side: 'light' | 'dark') {
@@ -386,62 +390,3 @@ function dieMaterial(side: 'light' | 'dark') {
   )
 }
 
-/**
- * The khatam band: two courses of bone and brass lozenges on ebony, with brass
- * wire between and either side.
- *
- * Khatam-kari is built by bundling rods of bone, ebony and brass wire and
- * slicing across the bundle, so the motif is always a tight tessellation of
- * small pieces rather than a printed-looking repeat. A lozenge chain is the
- * canonical BORDER product (خاتم حاشیه) — deliberately simpler and narrower
- * than the field work — so this is the right motif for this location and not a
- * compromise for want of pixels.
- *
- * TWO COURSES, not one. Real borders run 2–6% of a board's width, and this band
- * was widened to reach that; scaling one chain up to fill it made the lozenges
- * bigger, and the band stopped reading as inlay and started reading as a gold
- * chain hung round the board — the loudest thing on screen, competing with the
- * checkers. Khatam is FINE work: the honest way to fill a wider band is more
- * courses of small pieces, which is also what the real thing does. The second
- * course is offset half a pitch so the two interlock rather than striping.
- *
- * `vertical` rotates the tile for the left and right sides of the case.
- */
-function khatamBand(id: string, vertical: boolean) {
-  const w = GEO.inlayW // across the band
-  const wire = w * 0.05 // brass, three of them: top, middle, bottom
-  const course = (w - wire * 3) / 2
-  const pitch = course * 0.95 // near-equilateral lozenges
-
-  const lozenge = (cx: number, cy: number) =>
-    [
-      `${cx},${cy - course / 2}`,
-      `${cx + pitch / 2},${cy}`,
-      `${cx},${cy + course / 2}`,
-      `${cx - pitch / 2},${cy}`,
-    ].join(' ')
-
-  const rowY = (n: 0 | 1) => wire + course / 2 + n * (course + wire)
-
-  return (
-    <pattern
-      id={id}
-      key={id}
-      patternUnits="userSpaceOnUse"
-      width={pitch * 2}
-      height={w}
-      {...(vertical ? { patternTransform: 'rotate(90)' } : {})}
-    >
-      <rect width={pitch * 2} height={w} fill="var(--khatam-ground)" />
-      <polygon points={lozenge(pitch * 0.5, rowY(0))} fill="var(--khatam-bone)" />
-      <polygon points={lozenge(pitch * 1.5, rowY(0))} fill="var(--khatam-brass)" />
-      {/* offset half a pitch, so the courses interlock instead of striping */}
-      <polygon points={lozenge(0, rowY(1))} fill="var(--khatam-brass)" />
-      <polygon points={lozenge(pitch, rowY(1))} fill="var(--khatam-bone)" />
-      <polygon points={lozenge(pitch * 2, rowY(1))} fill="var(--khatam-brass)" />
-      <rect width={pitch * 2} height={wire} fill="url(#brass-wire)" />
-      <rect y={wire + course} width={pitch * 2} height={wire} fill="url(#brass-wire)" />
-      <rect y={w - wire} width={pitch * 2} height={wire} fill="url(#brass-wire)" />
-    </pattern>
-  )
-}

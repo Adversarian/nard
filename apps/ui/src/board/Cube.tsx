@@ -57,7 +57,16 @@ export function Cube({
         rx={size * 0.4}
         fill="url(#cast)"
       />
-      <rect x={x - half} y={y - half} width={size} height={size} rx={r} fill="url(#cube-face)" />
+      <rect x={x - half} y={y - half} width={size} height={size} rx={r} fill="url(#tex-bone)" />
+      <rect
+        x={x - half}
+        y={y - half}
+        width={size}
+        height={size}
+        rx={r}
+        fill="url(#cube-face)"
+        opacity="0.5"
+      />
       {/* the lit top-left arris */}
       <path
         d={`M ${x - half + r * 0.3} ${y + half - r * 0.4} L ${x - half + r * 0.3} ${y - half + r} Q ${x - half + r * 0.3} ${y - half + r * 0.3} ${x - half + r} ${y - half + r * 0.3} L ${x + half - r * 0.4} ${y - half + r * 0.3}`}

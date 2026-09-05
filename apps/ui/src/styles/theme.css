@@ -56,6 +56,14 @@
   --inlay: #c9a227;
 
   --field: #1d160f;
+  /* The photographed materials are walnut and dark rosewood, which IS the
+     khatam board — so this theme leaves them alone. See board/Board.tsx Tint:
+     `-lift` is a white wash that changes lightness, `-tint` recolours without
+     touching it, and a theme generally needs both. */
+  --case-lift: 0;
+  --case-tint-a: 0;
+  --field-lift: 0;
+  --field-tint-a: 0;
   /* Points were #a63d2b / #2f5148 on a #17110d field. The cypress green came
      out within a couple of percent of the field it sat on and disappeared;
      both are lifted here until they carry at the tip, where the sheen is
@@ -120,6 +128,14 @@
   --inlay: #b2a077;
 
   --field: #0f2f25;
+  /* Billiard green over the rosewood: the tint carries the hue, the small lift
+     stops it going black once the green has taken the warmth out of it. */
+  --field-lift: 0.1;
+  --field-tint: #10493a;
+  --field-tint-a: 0.92;
+  --case-lift: 0;
+  --case-tint: #4a3a26;
+  --case-tint-a: 0.45;
   --point-a: #c9bb9c;
   --point-a-lo: #9a8c6f;
   --point-b: #2a5f4e;
@@ -172,6 +188,14 @@
   --inlay: #a8862c;
 
   --field: #e3d8c0;
+  /* Paper needs the lift far more than the tint: `color` blending cannot make
+     a near-black rosewood pale, however much hue you push into it. */
+  --field-lift: 0.86;
+  --field-tint: #dccdb0;
+  --field-tint-a: 0.7;
+  --case-lift: 0.5;
+  --case-tint: #a08a62;
+  --case-tint-a: 0.6;
   --point-a: #c05537;
   --point-a-lo: #8e3a24;
   --point-b: #52796b;
