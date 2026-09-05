@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Glossary } from '../chrome/Glossary'
+import { HelpIcon } from '../chrome/Button'
 import { OPPONENTS, isBeaten, opponentKey, type Opponent, type Progress } from './opponents'
 import { digits, T, type Lang } from '../i18n'
 import { PrHistory } from '../review/PrHistory'
@@ -179,11 +180,16 @@ export function Ladder({
         {/* The hint above uses "gammon", "backgammon" and "the doubling cube"
             in one sentence, so the way out of not knowing them belongs next
             to it rather than buried in settings. */}
+        {/* A button, not a whisper. This was dim grey letterspaced caps at 70%
+            opacity — indistinguishable from the caption above it, which is
+            exactly the wrong treatment for the one thing on this screen that
+            answers the question the caption raises. */}
         <button
           onClick={() => setGlossary(true)}
-          className="text-label uppercase tracking-[0.18em] underline-offset-4 transition-opacity hover:opacity-100 hover:underline"
-          style={{ color: 'var(--text-dim)', opacity: 0.7 }}
+          className="flex items-center gap-2 rounded-[3px] px-4 py-2 text-xs transition-colors hover:brightness-110"
+          style={{ border: '1px solid var(--app-line)', color: 'var(--text)' }}
         >
+          <HelpIcon />
           {t('glossary.open')}
         </button>
       </div>

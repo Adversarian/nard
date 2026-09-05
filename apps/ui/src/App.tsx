@@ -18,6 +18,8 @@ import { findMatch } from './game/archive'
 import { Ladder } from './ladder/Ladder'
 import { Rail } from './game/Rail'
 import { Wordmark } from './chrome/Wordmark'
+import { HelpIcon } from './chrome/Button'
+import { Glossary } from './chrome/Glossary'
 import { opponentById, opponentKey } from './ladder/opponents'
 import { decisionMaker, reconcile, toAbsolute } from './game/view'
 import { T } from './i18n'
@@ -144,6 +146,7 @@ function PlayView() {
 
   // The checker under the cursor, when it is one you could actually pick up.
   const [hover, setHover] = useState<number | null>(null)
+  const [glossary, setGlossary] = useState(false)
   const lifted =
     !drag && hover !== null && aff.movable.includes(hover)
       ? (topEntityAt(entities, hover)?.id ?? null)
@@ -209,8 +212,29 @@ function PlayView() {
         >
           <Wordmark />
         </button>
-        <Settings />
+        <span className="flex items-center gap-1">
+          {/* On the board itself, not only on the ladder and inside settings.
+              A word met mid-game should not require opening a menu. */}
+          <button
+            onClick={() => setGlossary(true)}
+            aria-label={t('glossary.open')}
+            title={t('glossary.open')}
+            className="flex items-center p-1 opacity-55 transition-opacity hover:opacity-100"
+            style={{ color: 'var(--text-dim)' }}
+          >
+            <HelpIcon />
+          </button>
+          <Settings />
+        </span>
       </header>
+      {/* Fixed, not absolute: the play view's root is not a positioned
+          ancestor, so an absolute overlay would resolve against the viewport
+          anyway — saying so is clearer than relying on it. */}
+      {glossary && (
+        <div className="fixed inset-0 z-30">
+          <Glossary lang={lang} onClose={() => setGlossary(false)} />
+        </div>
+      )}
 
       {/*
         More room as the window grows. Sized for a 1920x1080 screen, where the

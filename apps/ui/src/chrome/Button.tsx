@@ -74,3 +74,26 @@ export function SettingsIcon() {
     </svg>
   )
 }
+
+/**
+ * Help. A question mark, drawn rather than typed.
+ *
+ * Sits beside Settings in the header, which is the only chrome that is on
+ * screen for the whole game — the glossary was reachable from the ladder and
+ * from inside the settings popover, meaning a player who met a word mid-game
+ * had to open a menu to find out what it meant.
+ */
+export function HelpIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden>
+      <circle cx="12" cy="12" r="9.2" stroke="currentColor" strokeWidth="1.6" />
+      <path
+        d="M9.3 9.2a2.8 2.8 0 1 1 3.5 2.7c-.5.15-.8.6-.8 1.15v.75"
+        stroke="currentColor"
+        strokeWidth="1.6"
+        strokeLinecap="round"
+      />
+      <circle cx="12" cy="16.7" r="1.05" fill="currentColor" />
+    </svg>
+  )
+}
