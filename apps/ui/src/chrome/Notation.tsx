@@ -1,4 +1,4 @@
-import { digits, STRINGS, type Lang } from '../i18n/strings'
+import { digits, T, type Lang } from '../i18n'
 
 /**
  * Split a turn's notation into its individual plays.
@@ -39,9 +39,9 @@ export function Notation({
   /** `good` marks the engine's preferred play in the review. */
   tone?: 'good'
 }) {
-  const s = STRINGS[lang]
+  const t = T(lang)
   const term = (v: string) =>
-    v === 'bar' ? s.barPoint : v === 'off' ? s.offTray : digits(Number(v), lang)
+    v === 'bar' ? t('board.bar') : v === 'off' ? t('board.off') : digits(Number(v), lang)
 
   return (
     <span
@@ -55,7 +55,7 @@ export function Notation({
           <span style={{ color: 'var(--text-dim)' }}>→</span>
           {term(m.to)}
           {m.hit && (
-            <span className="ms-0.5" style={{ color: 'var(--bad)' }} title={s.hit}>
+            <span className="ms-0.5" style={{ color: 'var(--bad)' }} title={t('board.hit')}>
               ✕
             </span>
           )}

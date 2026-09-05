@@ -1,6 +1,6 @@
 import { Popover } from '@base-ui-components/react/popover'
 import { useSettings, type Theme } from './store'
-import { STRINGS, type Lang } from '../i18n/strings'
+import { T, type Lang } from '../i18n'
 import type { HomeSide } from '../board/geometry'
 import { sound } from '../sound/player'
 import { SettingsIcon } from '../chrome/Button'
@@ -14,13 +14,13 @@ import { SettingsIcon } from '../chrome/Button'
  */
 export function Settings() {
   const st = useSettings()
-  const s = STRINGS[st.lang]
+  const t = T(st.lang)
   const fa = st.lang === 'fa'
 
   return (
     <Popover.Root>
       <Popover.Trigger
-        aria-label={fa ? 'تنظیمات' : 'Settings'}
+        aria-label={t('app.settings')}
         className="flex items-center p-1 opacity-55 transition-opacity hover:opacity-100"
         style={{ color: 'var(--text-dim)' }}
       >
@@ -37,38 +37,42 @@ export function Settings() {
               color: 'var(--text)',
             }}
           >
-            <Row label={fa ? 'تخته' : 'Board'}>
+            <Row label={t('settings.board')}>
               <Choice<Theme>
                 value={st.theme}
                 onChange={(v) => st.set('theme', v)}
                 options={[
-                  ['khatam', fa ? 'خاتم' : 'Khatam'],
-                  ['tournament', fa ? 'مسابقه' : 'Tournament'],
-                  ['kaghaz', fa ? 'کاغذ' : 'Kaghaz'],
+                  ['khatam', t('settings.themeKhatam')],
+                  ['tournament', t('settings.themeTournament')],
+                  ['kaghaz', t('settings.themeKaghaz')],
                 ]}
               />
             </Row>
-            <Row label={fa ? 'زبان' : 'Language'}>
+            <Row label={t('settings.language')}>
               <Choice<Lang>
                 value={st.lang}
                 onChange={(v) => st.set('lang', v)}
+                /* Language names are always written in their OWN language —
+                   a Persian speaker looking for Persian looks for فارسی, not
+                   for whatever "Persian" is in the language they cannot read.
+                   Both bundles therefore hold the same two strings. */
                 options={[
-                  ['en', 'English'],
-                  ['fa', 'فارسی'],
+                  ['en', t('settings.langEn')],
+                  ['fa', t('settings.langFa')],
                 ]}
               />
             </Row>
-            <Row label={fa ? 'خانهٔ من' : 'My home'}>
+            <Row label={t('settings.myHome')}>
               <Choice<HomeSide>
                 value={st.home}
                 onChange={(v) => st.set('home', v)}
                 options={[
-                  ['right', fa ? 'راست' : 'Right'],
-                  ['left', fa ? 'چپ' : 'Left'],
+                  ['right', t('settings.right')],
+                  ['left', t('settings.left')],
                 ]}
               />
             </Row>
-            <Row label={fa ? 'صدا' : 'Sound'}>
+            <Row label={t('settings.sound')}>
               <Choice<string>
                 value={st.volume > 0 ? 'on' : 'off'}
                 onChange={(v) => {
@@ -82,8 +86,8 @@ export function Settings() {
                    lit one is what is happening or what would happen if they
                    pressed it. */
                 options={[
-                  ['on', s.soundOn],
-                  ['off', s.soundOff],
+                  ['on', t('settings.on')],
+                  ['off', t('settings.off')],
                 ]}
               />
             </Row>

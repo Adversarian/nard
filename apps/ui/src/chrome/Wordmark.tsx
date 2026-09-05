@@ -9,6 +9,12 @@
  * This replaces a header that held nothing but the word "nard" in dim grey
  * letterspaced caps — which is what "the UI feels empty" looks like at the top
  * of the window.
+ *
+ * The two words are hard-coded rather than pulled from the bundles, and that is
+ * the one deliberate exception to "all copy lives in en.json / fa.json". This
+ * is a LOGO: both halves show in both languages, neither is translated, and it
+ * is laid out as a fixed lockup. Putting it in the bundles would invite someone
+ * to translate half of it.
  */
 export function Wordmark({ size = 'sm' }: { size?: 'sm' | 'lg' }) {
   const big = size === 'lg'

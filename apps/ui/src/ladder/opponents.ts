@@ -12,85 +12,56 @@
  */
 
 import type { DifficultyRung, Personality } from '@nard/ai'
-import type { Lang } from '../i18n/strings'
+import type { Key } from '../i18n'
 
 export interface Opponent {
   readonly id: string
   readonly rung: DifficultyRung
   readonly personality: Personality
-  readonly name: Readonly<Record<Lang, string>>
-  /** One line of character, shown on the card. */
-  readonly blurb: Readonly<Record<Lang, string>>
-  /** How they play, in the player's terms. Not a difficulty number. */
-  readonly style: Readonly<Record<Lang, string>>
 }
+
+/**
+ * Where an opponent's copy lives in the bundles.
+ *
+ * Their name, the line of character and the way they play are TEXT, so they
+ * belong in en.json / fa.json with everything else a player reads — not in this
+ * file, which is about rungs and personalities. The cast is honest: the ids are
+ * data, so the key cannot be checked at compile time, and the bundle test
+ * catches a missing one instead.
+ */
+export const opponentKey = (id: string, part: 'name' | 'style' | 'blurb'): Key =>
+  `opponent.${id}.${part}` as Key
 
 export const OPPONENTS: readonly Opponent[] = [
   {
     id: 'davoud',
     rung: 1,
     personality: 'purist',
-    name: { en: 'Davoud', fa: 'داوود' },
-    blurb: {
-      en: 'Learned the rules a year ago and has not lost interest yet.',
-      fa: 'پارسال قواعد را یاد گرفته و هنوز خسته نشده.',
-    },
-    style: { en: 'Plays the obvious move', fa: 'حرکت واضح را بازی می‌کند' },
   },
   {
     id: 'nasrin',
     rung: 2,
     personality: 'racer',
-    name: { en: 'Nasrin', fa: 'نسرین' },
-    blurb: {
-      en: 'Hates a fight. Would rather be two pips ahead than hold an anchor.',
-      fa: 'از درگیری بدش می‌آید. دو خانه جلو بودن را به لنگر ترجیح می‌دهد.',
-    },
-    style: { en: 'Runs for home', fa: 'به سمت خانه فرار می‌کند' },
   },
   {
     id: 'keyvan',
     rung: 3,
     personality: 'blitzer',
-    name: { en: 'Keyvan', fa: 'کیوان' },
-    blurb: {
-      en: 'Learned in a coffee house. Hits first and counts afterwards.',
-      fa: 'در قهوه‌خانه یاد گرفته. اول می‌زند، بعد حساب می‌کند.',
-    },
-    style: { en: 'Attacks', fa: 'حمله می‌کند' },
   },
   {
     id: 'mehrdad',
     rung: 4,
     personality: 'priming',
-    name: { en: 'Mehrdad', fa: 'مهرداد' },
-    blurb: {
-      en: 'Patient to a fault. Will build a wall and wait behind it all evening.',
-      fa: 'بیش از حد صبور. دیوار می‌سازد و تمام شب پشتش صبر می‌کند.',
-    },
-    style: { en: 'Builds primes', fa: 'دیوار می‌سازد' },
   },
   {
     id: 'parvaneh',
     rung: 5,
     personality: 'anchor',
-    name: { en: 'Parvaneh', fa: 'پروانه' },
-    blurb: {
-      en: 'Happy to be behind. Holds two points in your home board and waits.',
-      fa: 'از عقب بودن ناراحت نیست. دو خانه در خانهٔ تو می‌گیرد و صبر می‌کند.',
-    },
-    style: { en: 'Plays a backgame', fa: 'بازی عقب می‌کند' },
   },
   {
     id: 'ostad',
     rung: 6,
     personality: 'purist',
-    name: { en: 'Ostad', fa: 'استاد' },
-    blurb: {
-      en: 'No style at all. Only the best move, every time.',
-      fa: 'هیچ سبکی ندارد. فقط بهترین حرکت، هر بار.',
-    },
-    style: { en: 'Pure equity', fa: 'فقط بهترین حرکت' },
   },
 ]
 

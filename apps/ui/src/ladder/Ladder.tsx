@@ -1,6 +1,6 @@
 import { useState } from 'react'
-import { OPPONENTS, isBeaten, type Opponent, type Progress } from './opponents'
-import { digits, STRINGS, type Lang } from '../i18n/strings'
+import { OPPONENTS, isBeaten, opponentKey, type Opponent, type Progress } from './opponents'
+import { digits, T, type Lang } from '../i18n'
 import { PrHistory } from '../review/PrHistory'
 import { Wordmark } from '../chrome/Wordmark'
 
@@ -41,7 +41,7 @@ export function Ladder({
   progress: Progress
   onStart: (opponent: Opponent, matchLength: number) => void
 }) {
-  const s = STRINGS[lang]
+  const t = T(lang)
   const [length, setLength] = useState(7)
   const fa = lang === 'fa'
 
@@ -91,7 +91,7 @@ export function Ladder({
                       background: 'var(--inlay)',
                       color: 'var(--app-bg)',
                     }}
-                    title={fa ? 'برده‌ای' : 'Beaten'}
+                    title={t('ladder.beaten')}
                   >
                     ✓
                   </span>
@@ -101,7 +101,7 @@ export function Ladder({
               <div className="flex min-w-0 flex-1 flex-col self-stretch">
                 <div className="flex items-baseline justify-between gap-2">
                   <span className="text-lg leading-tight" style={{ color: 'var(--text)' }}>
-                    {o.name[lang]}
+                    {t(opponentKey(o.id, 'name'))}
                   </span>
                   {rec && (
                     <span className="shrink-0 text-xs tabular-nums" style={{ color: 'var(--text-dim)' }}>
@@ -110,10 +110,10 @@ export function Ladder({
                   )}
                 </div>
                 <div className="mt-0.5 text-sm" style={{ color: 'var(--inlay)' }}>
-                  {o.style[lang]}
+                  {t(opponentKey(o.id, 'style'))}
                 </div>
                 <p className="mt-2 text-xs leading-relaxed" style={{ color: 'var(--text-dim)' }}>
-                  {o.blurb[lang]}
+                  {t(opponentKey(o.id, 'blurb'))}
                 </p>
               </div>
             </button>
@@ -139,7 +139,7 @@ export function Ladder({
             className="text-label uppercase tracking-[0.2em]"
             style={{ color: 'var(--text-dim)' }}
           >
-            {fa ? 'مسابقه تا' : 'Match to'}
+            {t('ladder.matchTo')}
           </span>
           <div
             className="flex overflow-hidden rounded-[3px]"
@@ -164,17 +164,16 @@ export function Ladder({
             className="text-label uppercase tracking-[0.2em]"
             style={{ color: 'var(--text-dim)' }}
           >
-            {fa ? 'امتیاز' : 'points'}
+            {t('ladder.points')}
           </span>
         </div>
         <p
           className="max-w-md text-center text-xs leading-relaxed"
           style={{ color: 'var(--text-dim)', opacity: 0.85 }}
         >
-          {s.matchLengthHint(digits(length, lang))}
+          {t('ladder.matchHint', { n: length })}
         </p>
       </div>
-      <span className="sr-only">{s.appName}</span>
     </div>
   )
 }

@@ -8,7 +8,7 @@
 
 import { create } from 'zustand'
 import type { HomeSide } from '../board/geometry'
-import type { Lang } from '../i18n/strings'
+import type { Lang } from '../i18n'
 import { sound } from '../sound/player'
 
 export type Theme = 'khatam' | 'tournament' | 'kaghaz'
