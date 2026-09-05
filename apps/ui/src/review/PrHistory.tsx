@@ -1,6 +1,6 @@
 import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
 import { prHistory } from '../game/archive'
-import { digits, type Lang } from '../i18n/strings'
+import { digits, T, type Lang } from '../i18n'
 
 /**
  * PR over time.
@@ -14,7 +14,7 @@ import { digits, type Lang } from '../i18n/strings'
  * not information.
  */
 export function PrHistory({ lang }: { lang: Lang }) {
-  const fa = lang === 'fa'
+  const t = T(lang)
   const points = prHistory()
   if (points.length < 3) return null
 
@@ -29,11 +29,11 @@ export function PrHistory({ lang }: { lang: Lang }) {
     <section className="mx-auto mt-10 w-full max-w-5xl">
       <div className="mb-2 flex items-baseline justify-between">
         <h2 className="text-xs uppercase tracking-wider" style={{ color: 'var(--text-dim)' }}>
-          {fa ? 'روند بازی شما' : 'Your play over time'}
+          {t('review.overTime')}
         </h2>
         <span className="text-xs" style={{ color: 'var(--text-dim)' }}>
-          {fa ? 'میانگین اخیر' : 'recent'} {digits(Math.round(recent), lang)} ·{' '}
-          {fa ? 'بهترین' : 'best'} {digits(Math.round(best), lang)}
+          {t('review.recent')} {digits(Math.round(recent), lang)} ·{' '}
+          {t('review.bestEver')} {digits(Math.round(best), lang)}
         </span>
       </div>
       <div style={{ height: 140 }}>
@@ -56,7 +56,7 @@ export function PrHistory({ lang }: { lang: Lang }) {
                 color: 'var(--text)',
                 fontSize: 12,
               }}
-              labelFormatter={(v) => `${fa ? 'مسابقه' : 'match'} ${v}`}
+              labelFormatter={(v) => t('review.matchN', { n: Number(v) })}
               formatter={(v) => [String(v), 'PR']}
             />
             <Line
@@ -72,9 +72,7 @@ export function PrHistory({ lang }: { lang: Lang }) {
         </ResponsiveContainer>
       </div>
       <p className="mt-1 text-xs" style={{ color: 'var(--text-dim)', opacity: 0.7 }}>
-        {fa
-          ? 'PR کمتر بهتر است؛ محور برعکس است تا بالا رفتن خط یعنی بهتر شدن.'
-          : 'Lower PR is better, so the axis is inverted — the line rising means you are improving.'}
+        {t('review.prAxisHint')}
       </p>
     </section>
   )

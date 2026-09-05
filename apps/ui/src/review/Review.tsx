@@ -6,8 +6,8 @@ import {
   type MatchAnalysis,
   type SavedMatchV1,
 } from '@nard/analysis'
-import { digits, STRINGS, type Lang } from '../i18n/strings'
-import { opponentById } from '../ladder/opponents'
+import { digits, T, type Lang, type Translate } from '../i18n'
+import { opponentKey } from '../ladder/opponents'
 import { runAnalysis } from './analyse'
 import { recordPr } from '../game/archive'
 import { Button } from '../chrome/Button'
@@ -37,7 +37,7 @@ export function Review({
   opponentId: string
   onClose: () => void
 }) {
-  const s = STRINGS[lang]
+  const t = T(lang)
   const fa = lang === 'fa'
   const n = (v: number) => digits(v, lang)
   const [analysis, setAnalysis] = useState<MatchAnalysis | null>(null)
@@ -92,14 +92,14 @@ export function Review({
       */}
       <header className="mx-auto flex w-full max-w-4xl items-center justify-between">
         <h1 className="text-lg" style={{ color: 'var(--text)' }}>
-          {fa ? 'مرور مسابقه' : 'Match review'}
+          {t('review.title')}
         </h1>
-        <Button onClick={onClose}>{fa ? 'بستن' : 'Close'}</Button>
+        <Button onClick={onClose}>{t('common.close')}</Button>
       </header>
 
       <div className="mx-auto mt-2 w-full max-w-4xl text-xs" style={{ color: 'var(--text-dim)' }}>
-        {fa ? 'حریف' : 'Opponent'}: {opponentById(opponentId).name[lang]} ·{' '}
-        {fa ? 'عمق ارزیابی' : 'Evaluated at'} {n(plies)} {fa ? 'لایه' : 'ply'}
+        {t('common.opponent')}: {t(opponentKey(opponentId, 'name'))} ·{' '}
+        {t('review.evaluatedAt', { n: plies })}
       </div>
 
       {!analysis && !error && (
@@ -117,7 +117,7 @@ export function Review({
             style={{ background: 'var(--app-panel)', border: '1px solid var(--app-line)' }}
           >
             <div className="text-sm" style={{ color: 'var(--text)' }}>
-              {fa ? 'در حال تحلیل مسابقه' : 'Analysing the match'}
+              {t('review.analysing')}
             </div>
             <div
               className="mt-5 h-1 w-full overflow-hidden rounded-full"
@@ -132,9 +132,7 @@ export function Review({
               {n(progress.done)} / {n(progress.total)} · {n(pct)}%
             </div>
             <p className="mt-5 text-xs leading-relaxed" style={{ color: 'var(--text-dim)', opacity: 0.8 }}>
-              {fa
-                ? 'هر موقعیت دوباره با موتور ارزیابی می‌شود تا خطای هر حرکت مشخص شود.'
-                : 'Every position is evaluated again, so the cost of each play can be measured.'}
+              {t('review.analysingHint')}
             </p>
           </div>
         </div>
@@ -142,7 +140,7 @@ export function Review({
 
       {error && (
         <p className="mx-auto mt-16 w-full max-w-md text-center text-sm" style={{ color: 'var(--bad)' }}>
-          {fa ? 'تحلیل ممکن نشد' : 'Analysis unavailable'} — {error}
+          {t('review.unavailable')} — {error}
         </p>
       )}
 
@@ -160,6 +158,7 @@ function Body({
   lang: Lang
   opponentId: string
 }) {
+  const t = T(lang)
   const fa = lang === 'fa'
   const n = (v: number) => digits(v, lang)
   const you = analysis.performance.light
@@ -176,14 +175,14 @@ function Body({
     <div className="mx-auto mt-8 w-full max-w-4xl">
       <section className="grid grid-cols-2 gap-4">
         <PrCard
-          label={fa ? 'شما' : 'You'}
+          label={t('common.you')}
           checker={you.checker}
           cube={you.cube}
           lang={lang}
           highlight
         />
         <PrCard
-          label={opponentById(opponentId).name[lang]}
+          label={t(opponentKey(opponentId, 'name'))}
           checker={them.checker}
           cube={them.cube}
           lang={lang}
@@ -191,7 +190,7 @@ function Body({
       </section>
 
       <section className="mt-6">
-        <H>{fa ? 'کیفیت حرکت‌ها' : 'How you played'}</H>
+        <H>{t('review.howYouPlayed')}</H>
         <div className="mt-2 flex gap-1.5">
           {(['good', 'doubtful', 'error', 'blunder'] as const).map((band) => (
             <div
@@ -203,7 +202,7 @@ function Body({
                 {n(bands[band])}
               </div>
               <div className="text-xs" style={{ color: 'var(--text-dim)' }}>
-                {bandLabel(band, lang)}
+                {bandLabel(band, t)}
               </div>
             </div>
           ))}
@@ -211,26 +210,25 @@ function Body({
       </section>
 
       <section className="mt-6">
-        <H>{fa ? 'شانس' : 'Luck'}</H>
+        <H>{t('review.luck')}</H>
         <p className="mt-1 text-sm" style={{ color: 'var(--text-dim)' }}>
-          {fa
-            ? `شما ${n2(analysis.luckSkill.luck.light)} · حریف ${n2(analysis.luckSkill.luck.dark)}`
-            : `You ${n2(analysis.luckSkill.luck.light)} · Opponent ${n2(analysis.luckSkill.luck.dark)}`}
+          {t('review.luckLine', {
+            you: n2(analysis.luckSkill.luck.light),
+            them: n2(analysis.luckSkill.luck.dark),
+          })}
           {' — '}
           <span style={{ color: 'var(--warn)' }}>
-            {fa ? 'تقریبی' : 'approximate'}
+            {t('review.approximate')}
           </span>
         </p>
         <p className="mt-1 text-xs" style={{ color: 'var(--text-dim)', opacity: 0.75 }}>
-          {fa
-            ? 'اعداد شانس هنوز با GNU Backgammon مطابقت کامل ندارند؛ امتیاز مهارت دقیق است.'
-            : 'Luck figures do not yet agree exactly with GNU Backgammon. The skill numbers do.'}
+          {t('review.luckCaveat')}
         </p>
       </section>
 
       <section className="mt-6">
         <H>
-          {fa ? 'بدترین حرکت‌ها' : 'Worst plays'} ({n(analysis.blunders.length)})
+          {t('review.worstPlays')} ({n(analysis.blunders.length)})
         </H>
         <ol className="mt-2 space-y-1.5">
           {analysis.blunders.slice(0, 12).map((b, i) => (
@@ -245,7 +243,7 @@ function Body({
         </ol>
         {analysis.blunders.length === 0 && (
           <p className="mt-2 text-sm" style={{ color: 'var(--text-dim)' }}>
-            {fa ? 'هیچ اشتباه بزرگی نبود.' : 'No blunders. Well played.'}
+            {t('review.noBlunders')}
           </p>
         )}
       </section>
@@ -276,6 +274,7 @@ function PrCard({
   lang: Lang
   highlight?: boolean
 }) {
+  const t = T(lang)
   const fa = lang === 'fa'
   return (
     <div
@@ -293,15 +292,13 @@ function PrCard({
           {checker.pr === null ? '—' : digits(Math.round(checker.pr), lang)}
         </span>
         <span className="text-xs" style={{ color: 'var(--text-dim)' }}>
-          PR · {fa ? 'حرکت' : 'checker'}
+          PR · {t('review.checker')}
         </span>
       </div>
       <div className="mt-1 text-xs" style={{ color: 'var(--text-dim)' }}>
         {cube.pr === null
-          ? fa
-            ? 'بدون تصمیم دوبل'
-            : 'no cube decisions'
-          : `${digits(Math.round(cube.pr), lang)} PR · ${fa ? 'دوبل' : 'cube'}`}
+          ? t('review.noCubeDecisions')
+          : `${digits(Math.round(cube.pr), lang)} PR · ${t('review.cube')}`}
       </div>
     </div>
   )
@@ -318,6 +315,7 @@ function BlunderRow({
   lang: Lang
   opponentId: string
 }) {
+  const t = T(lang)
   const fa = lang === 'fa'
   const mine = blunder.player === 'light'
   const played =
@@ -337,7 +335,7 @@ function BlunderRow({
         {blunder.error.toFixed(3)}
       </span>
       <span style={{ color: 'var(--text-dim)', minWidth: '5em' }}>
-        {mine ? (fa ? 'شما' : 'you') : opponentById(opponentId).name[lang]}
+        {mine ? t('review.youLower') : t(opponentKey(opponentId, 'name'))}
       </span>
       <span className="flex flex-wrap items-baseline gap-2" style={{ color: 'var(--text)' }}>
         <Notation text={played} lang={lang} />
@@ -345,7 +343,7 @@ function BlunderRow({
             now, and "X → Y" between two of them reads as one long move rather
             than as a comparison between what was played and what was best. */}
         <span className="text-label uppercase tracking-wider" style={{ color: 'var(--text-dim)' }}>
-          {fa ? 'بهتر' : 'best'}
+          {t('common.best')}
         </span>
         <Notation text={best} lang={lang} tone="good" />
       </span>
@@ -368,18 +366,15 @@ function countBands(a: MatchAnalysis): Record<'good' | 'doubtful' | 'error' | 'b
 const bandColour = (b: string) =>
   b === 'good' ? 'var(--good)' : b === 'blunder' ? 'var(--bad)' : 'var(--warn)'
 
-function bandLabel(b: string, lang: Lang): string {
-  const en: Record<string, string> = {
-    good: 'good',
-    doubtful: 'doubtful',
-    error: 'errors',
-    blunder: 'blunders',
-  }
-  const fa: Record<string, string> = {
-    good: 'خوب',
-    doubtful: 'مشکوک',
-    error: 'خطا',
-    blunder: 'اشتباه بزرگ',
-  }
-  return (lang === 'fa' ? fa : en)[b] ?? b
+/** The four quality bands, named. Their copy lives in the bundles like the rest. */
+function bandLabel(b: string, t: Translate): string {
+  return t(
+    b === 'good'
+      ? 'band.good'
+      : b === 'doubtful'
+        ? 'band.doubtful'
+        : b === 'error'
+          ? 'band.error'
+          : 'band.blunder',
+  )
 }

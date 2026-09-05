@@ -1,7 +1,7 @@
 import type { GameState } from '@nard/engine'
 import type { Affordances, LogEntry } from './store'
-import type { Opponent } from '../ladder/opponents'
-import { digits, STRINGS, type Lang } from '../i18n/strings'
+import { opponentKey, type Opponent } from '../ladder/opponents'
+import { digits, T, type Lang } from '../i18n'
 import { Button } from '../chrome/Button'
 import { Notation } from '../chrome/Notation'
 
@@ -74,7 +74,7 @@ export function Rail({
   onTake: () => void
   onPass: () => void
 }) {
-  const s = STRINGS[lang]
+  const t = T(lang)
   const n = (v: number) => digits(v, lang)
   const theirTurn = !isHumanTurn && state.phase !== 'game-over' && state.phase !== 'match-over'
 
@@ -94,24 +94,30 @@ export function Rail({
           style={{ border: '1px solid var(--inlay)', opacity: theirTurn ? 1 : 0.7 }}
         />
         <div className="min-w-0">
-          <div className="truncate text-base leading-tight">{opponent.name[lang]}</div>
+          <div className="truncate text-base leading-tight">{t(opponentKey(opponent.id, 'name'))}</div>
           <div className="truncate text-xs leading-tight" style={{ color: 'var(--inlay)' }}>
-            {opponent.style[lang]}
+            {t(opponentKey(opponent.id, 'style'))}
           </div>
+          {/* Whose turn it is, said plainly.
+              It was a six-pixel dot beside dim grey text — the quietest thing
+              in a rail whose loudest thing is a solid brass button, which is
+              the wrong way round. The state a player checks most often should
+              not be the one they have to hunt for. */}
           <div
-            className="mt-2 flex items-center gap-1.5 text-label leading-tight"
-            style={{ color: 'var(--text-dim)' }}
+            className="mt-2 flex items-center gap-2 text-xs leading-tight transition-colors"
+            style={{ color: theirTurn ? 'var(--inlay)' : 'var(--text)' }}
           >
             <span
-              className="h-1.5 w-1.5 shrink-0 rounded-full transition-colors"
-              style={{ background: theirTurn ? 'var(--inlay)' : 'var(--app-line)' }}
+              className="h-2 w-2 shrink-0 rounded-full transition-colors"
+              style={{
+                background: theirTurn ? 'var(--inlay)' : 'var(--text)',
+                boxShadow: theirTurn ? '0 0 0 3px color-mix(in srgb, var(--inlay) 22%, transparent)' : 'none',
+              }}
             />
             {thinking ? (
-              <span className="animate-pulse">{s.thinking}</span>
-            ) : theirTurn ? (
-              s.theirTurn
+              <span className="animate-pulse">{t('play.thinking')}</span>
             ) : (
-              s.yourTurn
+              t(theirTurn ? 'play.theirTurn' : 'play.yourTurn')
             )}
           </div>
         </div>
@@ -122,26 +128,30 @@ export function Rail({
       {/* ---- the match ----------------------------------------------- */}
       <div className="py-5">
         <div className="grid grid-cols-[1fr_auto_1fr] items-center">
-          <Score label={s.you} value={n(state.match.score.light)} lead={state.match.score.light > state.match.score.dark} />
+          <Score label={t('common.you')} value={n(state.match.score.light)} lead={state.match.score.light > state.match.score.dark} />
           <div className="px-3 text-center">
             <div className="text-label uppercase tracking-[0.16em]" style={{ color: 'var(--text-dim)' }}>
-              {s.playTo}
+              {t('match.playTo')}
             </div>
             <div className="mt-0.5 text-base tabular-nums" style={{ color: 'var(--text-dim)' }}>
               {state.match.length > 0 ? n(state.match.length) : '∞'}
             </div>
           </div>
-          <Score label={opponent.name[lang]} value={n(state.match.score.dark)} lead={state.match.score.dark > state.match.score.light} />
+          <Score label={t(opponentKey(opponent.id, 'name'))} value={n(state.match.score.dark)} lead={state.match.score.dark > state.match.score.light} />
         </div>
         {(state.match.crawford || state.cube.value > 1 || degraded) && (
           <div className="mt-3.5 flex flex-wrap justify-center gap-1.5">
-            {state.match.crawford && <Tag>{s.crawford}</Tag>}
+            {state.match.crawford && <Tag>{t('match.crawford')}</Tag>}
             {state.cube.value > 1 && (
               <Tag>
-                {s.cube} {n(state.cube.value)}
+                {t('play.cube')} {n(state.cube.value)}
               </Tag>
             )}
-            {degraded && <Tag warn title={s.reducedEngineHint}>{s.reducedEngine}</Tag>}
+            {degraded && (
+              <Tag warn title={t('play.reducedEngineHint')}>
+                {t('play.reducedEngine')}
+              </Tag>
+            )}
           </div>
         )}
       </div>
@@ -150,7 +160,7 @@ export function Rail({
 
       {/* ---- the race ------------------------------------------------ */}
       <div className="py-5">
-        <Race lang={lang} you={pips.player} them={pips.opponent} theirName={opponent.name[lang]} />
+        <Race lang={lang} you={pips.player} them={pips.opponent} theirName={t(opponentKey(opponent.id, 'name'))} />
       </div>
 
       <Rule />
@@ -158,11 +168,11 @@ export function Rail({
       {/* ---- what just happened -------------------------------------- */}
       <section className="flex min-h-0 flex-1 flex-col pt-5">
         <Head>
-          {s.game} {n(gameNo)}
+          {t('match.game')} {n(gameNo)}
         </Head>
         {log.length === 0 ? (
           <p className="mt-3 text-xs" style={{ color: 'var(--text-dim)' }}>
-            {s.noMovesYet}
+            {t('play.noMovesYet')}
           </p>
         ) : (
           /*
@@ -198,14 +208,14 @@ export function Rail({
         {facingDouble ? (
           <>
             <div className="text-center text-xs" style={{ color: 'var(--text-dim)' }}>
-              {s.offeredYou(n(state.cube.value * 2))}
+              {t('play.doubledTo', { n: state.cube.value * 2 })}
             </div>
             <div className="flex gap-2">
               <Button primary grow onClick={onTake}>
-                {s.take(state.cube.value * 2)}
+                {t('play.take', { n: state.cube.value * 2 })}
               </Button>
               <Button grow onClick={onPass}>
-                {s.pass}
+                {t('play.pass')}
               </Button>
             </div>
           </>
@@ -213,23 +223,23 @@ export function Rail({
           <>
             {state.phase === 'to-move' && isHumanTurn && !aff.anyPlay && !aff.canUndo && (
               <div className="text-center text-xs" style={{ color: 'var(--text-dim)' }}>
-                {s.noPlay}
+                {t('play.noPlay')}
               </div>
             )}
             <div className="flex gap-2">
               {canRoll && (
                 <Button primary grow onClick={onRoll} hint="space">
-                  {s.roll}
+                  {t('play.roll')}
                 </Button>
               )}
               {canDoubleNow && (
                 <Button grow onClick={onDouble} hint="d">
-                  {s.double}
+                  {t('play.double')}
                 </Button>
               )}
               {aff.canUndo && (
                 <Button grow onClick={onUndo} hint="u">
-                  {s.undo}
+                  {t('play.undo')}
                 </Button>
               )}
             </div>
@@ -325,7 +335,7 @@ function Race({
   them: number
   theirName: string
 }) {
-  const s = STRINGS[lang]
+  const t = T(lang)
   const n = (v: number) => digits(v, lang)
   const lead = them - you // positive: you are ahead
   const ahead = lead > 0
@@ -342,7 +352,11 @@ function Race({
           className="text-label uppercase tracking-[0.16em]"
           style={{ color: 'var(--text-dim)' }}
         >
-          {lead === 0 ? s.level : ahead ? s.youLeadBy(n(lead)) : s.theyLeadBy(n(-lead))}
+          {lead === 0
+            ? t('race.level')
+            : ahead
+              ? t('race.youLead', { n: lead })
+              : t('race.theyLead', { n: -lead })}
         </span>
         <span className="tabular-nums" style={{ color: ahead ? 'var(--text)' : 'var(--inlay)' }}>
           {n(them)}
@@ -365,7 +379,7 @@ function Race({
         className="mt-2 flex justify-between text-label uppercase tracking-[0.14em]"
         style={{ color: 'var(--text-dim)' }}
       >
-        <span>{s.you}</span>
+        <span>{t('common.you')}</span>
         <span className="truncate ps-2">{theirName}</span>
       </div>
     </div>
@@ -456,8 +470,7 @@ function MiniDice({ dice }: { dice: readonly [number, number] }) {
 
 /** One line of the turn log. */
 function Line({ entry, lang }: { entry: LogEntry; lang: Lang }) {
-  const s = STRINGS[lang]
-  const n = (v: number) => digits(v, lang)
+  const t = T(lang)
   const light = entry.side === 'light'
 
   return (
@@ -476,12 +489,10 @@ function Line({ entry, lang }: { entry: LogEntry; lang: Lang }) {
       ) : (
         <span style={{ color: 'var(--text-dim)' }}>
           {entry.kind === 'no-play'
-            ? s.noPlay
+            ? t('play.noPlay')
             : entry.kind === 'double'
-              ? `${s.double} → ${n(Number(entry.text))}`
-              : entry.kind === 'take'
-                ? s.tookIt
-                : s.passed}
+              ? `${t('play.double')} → ${digits(Number(entry.text), lang)}`
+              : t(entry.kind === 'take' ? 'log.took' : 'log.passed')}
         </span>
       )}
     </li>

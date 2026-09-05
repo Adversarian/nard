@@ -18,9 +18,9 @@ import { findMatch } from './game/archive'
 import { Ladder } from './ladder/Ladder'
 import { Rail } from './game/Rail'
 import { Wordmark } from './chrome/Wordmark'
-import { opponentById } from './ladder/opponents'
+import { opponentById, opponentKey } from './ladder/opponents'
 import { decisionMaker, reconcile, toAbsolute } from './game/view'
-import { digits, STRINGS } from './i18n/strings'
+import { T } from './i18n'
 import { Settings } from './settings/Settings'
 import { useSettings } from './settings/store'
 import { SOUNDS } from './sound/manifest'
@@ -84,8 +84,7 @@ function Game() {
 function PlayView() {
   const lang = useSettings((st) => st.lang)
   const home = useSettings((st) => st.home)
-  const s = STRINGS[lang]
-  const n = (v: number) => digits(v, lang)
+  const t = T(lang)
   const store = useGame()
   const { state, draft, selected, thinking, degraded } = store
   const aff = useAffordances()
@@ -206,7 +205,7 @@ function PlayView() {
         <button
           onClick={() => store.toLadder()}
           className="py-1 transition-opacity hover:opacity-75"
-          title={s.chooseOpponent}
+          title={t('app.chooseOpponent')}
         >
           <Wordmark />
         </button>
@@ -349,11 +348,12 @@ function BoardWithPieces({ scene }: { scene: Scene }) {
 
 function SceneView({ scene }: { scene: Scene }) {
   const fa = scene.lang === 'fa'
+  const t = T(scene.lang ?? 'en')
   return (
     <div dir={fa ? 'rtl' : 'ltr'} className="room flex h-full flex-col">
       <header className="flex items-center justify-between px-6 py-3 text-sm">
         <Wordmark />
-        <span style={{ color: 'var(--text-dim)' }}>{fa ? 'مسابقه تا ۷ امتیاز' : 'Match to 7'} · 2–1</span>
+        <span style={{ color: 'var(--text-dim)' }}>{t('match.to', { n: 7 })} · 2–1</span>
       </header>
       <main className="flex min-h-0 flex-1 items-center justify-center px-6">
         <BoardWithPieces scene={scene} />

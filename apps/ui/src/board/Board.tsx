@@ -8,6 +8,7 @@ import {
   GEO,
   TRAY_X,
   offSlab,
+  pointEdges,
   pointGeom,
   pointPath,
   type HomeSide,
@@ -228,17 +229,16 @@ function Points() {
         // pattern stays symmetric across the bar.
         const a = p % 2 === 1
         const d = pointPath(g)
+        const e = pointEdges(g)
         return (
           <g key={p}>
             <path d={d} fill={`url(#mat-${a ? 'a' : 'b'})`} />
             <path d={d} fill={`url(#tipfade-${g.top ? 'top' : 'bot'})`} />
-            <path
-              d={d}
-              fill="none"
-              stroke="var(--point-seam)"
-              strokeOpacity="0.3"
-              strokeWidth="0.014"
-            />
+            {/* The bevel: lit slope, shadowed slope. One outline all the way
+                round reads as an outline; two differently-lit edges read as a
+                piece set into the field. */}
+            <path d={e.lit} fill="none" stroke="var(--point-seam)" strokeOpacity="0.42" strokeWidth="0.014" />
+            <path d={e.shade} fill="none" stroke="#000" strokeOpacity="0.34" strokeWidth="0.014" />
           </g>
         )
       })}
@@ -293,11 +293,10 @@ function Bar() {
   const x = FIELD_X + 6 * GEO.u
   return (
     <g>
-      <rect x={x} y={FIELD_Y} width={GEO.barW} height={GEO.innerH} fill="url(#tex-case)" />
+      <rect x={x} y={FIELD_Y} width={GEO.barW} height={GEO.innerH} fill="url(#tex-spine)" />
       <Tint x={x} y={FIELD_Y} w={GEO.barW} h={GEO.innerH} kind="case" />
       <rect x={x} y={FIELD_Y} width={GEO.barW} height={GEO.innerH} fill="url(#bar-light)" />
-      {/* the field falls away into shadow on both sides of it */}
-      <rect x={x - 0.09} y={FIELD_Y} width={GEO.barW + 0.18} height={GEO.innerH} fill="url(#edge-h)" />
+      <RaisedEdges left={x} right={x + GEO.barW} />
       {/* a brass wire down the centre, as on the case seam of a real board */}
       <line
         x1={x + GEO.barW / 2}
@@ -312,15 +311,42 @@ function Bar() {
   )
 }
 
+/**
+ * What a raised strip does to the field either side of it.
+ *
+ * The light is upper-left, so the strip casts to its RIGHT and the field on its
+ * left is simply lit — it gets nothing but the hairline where the two meet.
+ * Both marks sit entirely OUTSIDE the strip; the strip's own shading is its
+ * own business. Anything that spans the strip and spills onto the field on both
+ * sides paints a halo round it, which is what was here before.
+ */
+function RaisedEdges({ left, right }: { left: number; right: number }) {
+  const reach = 0.22 // how far the cast shadow carries across the field
+  return (
+    <g>
+      {/* the line where the field meets the strip's lit side */}
+      <rect
+        x={left - 0.02}
+        y={FIELD_Y}
+        width={0.02}
+        height={GEO.innerH}
+        fill="#000"
+        opacity="0.4"
+      />
+      <rect x={right} y={FIELD_Y} width={reach} height={GEO.innerH} fill="url(#cast-right)" />
+    </g>
+  )
+}
+
 /** The bear-off tray: a divider standing proud, and a well sunk behind it. */
 function Tray() {
   const { innerH, trayW, trayDivider } = GEO
   const dx = FIELD_X + GEO.innerW
   return (
     <g>
-      <rect x={dx} y={FIELD_Y} width={trayDivider} height={innerH} fill="url(#tex-case)" />
+      <rect x={dx} y={FIELD_Y} width={trayDivider} height={innerH} fill="url(#tex-spine)" />
       <Tint x={dx} y={FIELD_Y} w={trayDivider} h={innerH} kind="case" />
-      <rect x={dx - 0.07} y={FIELD_Y} width={trayDivider + 0.14} height={innerH} fill="url(#edge-h)" />
+      <RaisedEdges left={dx} right={dx + trayDivider} />
 
       <rect x={TRAY_X} y={FIELD_Y} width={trayW} height={innerH} fill="url(#tex-field)" />
       <Tint x={TRAY_X} y={FIELD_Y} w={trayW} h={innerH} kind="field" />
@@ -363,33 +389,70 @@ function Tray() {
   )
 }
 
-/** The khatam band, inset within the case edge on all four sides. */
+/**
+ * The khatam band, inset within the case edge on all four sides.
+ *
+ * MITRED AT THE CORNERS, like every piece of framing ever made. Each side is a
+ * trapezoid whose ends are cut at 45 degrees, so the four bands meet corner to
+ * corner instead of one running over another.
+ *
+ * They were four rectangles first, and the overlap at each corner is one of
+ * those details that is invisible until you look and then impossible to unsee —
+ * marquetry is cut and fitted, and butting one length over another is what a
+ * printed border does. It costs four polygons instead of four rects.
+ */
 function Inlay({ inset }: { inset: number }) {
   const w = GEO.inlayW
+  const x0 = inset
+  const y0 = inset
+  const x1 = BOARD_W - inset
+  const y1 = BOARD_H - inset
+  const poly = (pts: number[][]) => pts.map(([x, y]) => `${x},${y}`).join(' ')
+
   return (
-    <g>
-      <rect x={inset} y={inset} width={BOARD_W - inset * 2} height={w} fill="url(#khatam-h)" />
-      <rect
-        x={inset}
-        y={BOARD_H - inset - w}
-        width={BOARD_W - inset * 2}
-        height={w}
+    /* `--inlay-band-a` lets a theme dial the ornament down without losing the
+       trim entirely — the tournament board wants a line, not marquetry. */
+    <g style={{ opacity: 'var(--inlay-band-a, 1)' }}>
+      <polygon
+        points={poly([[x0, y0], [x1, y0], [x1 - w, y0 + w], [x0 + w, y0 + w]])}
         fill="url(#khatam-h)"
       />
-      <rect x={inset} y={inset} width={w} height={BOARD_H - inset * 2} fill="url(#khatam-v)" />
-      <rect
-        x={BOARD_W - inset - w}
-        y={inset}
-        width={w}
-        height={BOARD_H - inset * 2}
+      <polygon
+        points={poly([[x0, y1], [x1, y1], [x1 - w, y1 - w], [x0 + w, y1 - w]])}
+        fill="url(#khatam-h)"
+      />
+      <polygon
+        points={poly([[x0, y0], [x0, y1], [x0 + w, y1 - w], [x0 + w, y0 + w]])}
         fill="url(#khatam-v)"
       />
+      <polygon
+        points={poly([[x1, y0], [x1, y1], [x1 - w, y1 - w], [x1 - w, y0 + w]])}
+        fill="url(#khatam-v)"
+      />
+      {/* the mitre joints themselves, as fine dark cuts */}
+      {[
+        [[x0, y0], [x0 + w, y0 + w]],
+        [[x1, y0], [x1 - w, y0 + w]],
+        [[x0, y1], [x0 + w, y1 - w]],
+        [[x1, y1], [x1 - w, y1 - w]],
+      ].map(([a, b], i) => (
+        <line
+          key={i}
+          x1={a![0]}
+          y1={a![1]}
+          x2={b![0]}
+          y2={b![1]}
+          stroke="#000"
+          strokeOpacity="0.45"
+          strokeWidth="0.012"
+        />
+      ))}
       {/* the band is let into the timber, so it sits below the surface */}
       <rect
-        x={inset}
-        y={inset}
-        width={BOARD_W - inset * 2}
-        height={BOARD_H - inset * 2}
+        x={x0}
+        y={y0}
+        width={x1 - x0}
+        height={y1 - y0}
         fill="none"
         stroke="#000"
         strokeOpacity="0.4"

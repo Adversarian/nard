@@ -1,9 +1,11 @@
 import { Popover } from '@base-ui-components/react/popover'
 import { useSettings, type Theme } from './store'
-import { STRINGS, type Lang } from '../i18n/strings'
+import { T, type Lang } from '../i18n'
 import type { HomeSide } from '../board/geometry'
 import { sound } from '../sound/player'
+import { useState } from 'react'
 import { SettingsIcon } from '../chrome/Button'
+import { Glossary } from '../chrome/Glossary'
 
 /**
  * Settings.
@@ -14,13 +16,14 @@ import { SettingsIcon } from '../chrome/Button'
  */
 export function Settings() {
   const st = useSettings()
-  const s = STRINGS[st.lang]
+  const t = T(st.lang)
   const fa = st.lang === 'fa'
+  const [glossary, setGlossary] = useState(false)
 
   return (
     <Popover.Root>
       <Popover.Trigger
-        aria-label={fa ? 'تنظیمات' : 'Settings'}
+        aria-label={t('app.settings')}
         className="flex items-center p-1 opacity-55 transition-opacity hover:opacity-100"
         style={{ color: 'var(--text-dim)' }}
       >
@@ -33,42 +36,50 @@ export function Settings() {
             className="min-w-64 rounded-[3px] p-4 text-sm shadow-2xl outline-none"
             style={{
               background: 'var(--app-panel)',
-              border: '1px solid var(--inlay)',
+              /* A quiet edge and a warm shadow. A bright brass border made it
+                 a gold rectangle pasted over the board rather than something
+                 belonging to the same room. */
+              border: '1px solid var(--app-line)',
+              boxShadow: '0 18px 50px -12px var(--shadow)',
               color: 'var(--text)',
             }}
           >
-            <Row label={fa ? 'تخته' : 'Board'}>
+            <Row label={t('settings.board')}>
               <Choice<Theme>
                 value={st.theme}
                 onChange={(v) => st.set('theme', v)}
                 options={[
-                  ['khatam', fa ? 'خاتم' : 'Khatam'],
-                  ['tournament', fa ? 'مسابقه' : 'Tournament'],
-                  ['kaghaz', fa ? 'کاغذ' : 'Kaghaz'],
+                  ['khatam', t('settings.themeKhatam')],
+                  ['tournament', t('settings.themeTournament')],
+                  ['kaghaz', t('settings.themeKaghaz')],
                 ]}
               />
             </Row>
-            <Row label={fa ? 'زبان' : 'Language'}>
+            <Row label={t('settings.language')}>
               <Choice<Lang>
                 value={st.lang}
                 onChange={(v) => st.set('lang', v)}
+                /* Language names are always written in their OWN language —
+                   a Persian speaker looking for Persian looks for فارسی, not
+                   for whatever "Persian" is in the language they cannot read.
+                   Both bundles therefore hold the same two strings. */
                 options={[
-                  ['en', 'English'],
-                  ['fa', 'فارسی'],
+                  ['en', t('settings.langEn')],
+                  ['fa', t('settings.langFa')],
                 ]}
               />
             </Row>
-            <Row label={fa ? 'خانهٔ من' : 'My home'}>
+            <Row label={t('settings.myHome')}>
               <Choice<HomeSide>
                 value={st.home}
                 onChange={(v) => st.set('home', v)}
                 options={[
-                  ['right', fa ? 'راست' : 'Right'],
-                  ['left', fa ? 'چپ' : 'Left'],
+                  ['right', t('settings.right')],
+                  ['left', t('settings.left')],
                 ]}
               />
             </Row>
-            <Row label={fa ? 'صدا' : 'Sound'}>
+            <Row label={t('settings.sound')}>
               <Choice<string>
                 value={st.volume > 0 ? 'on' : 'off'}
                 onChange={(v) => {
@@ -82,14 +93,29 @@ export function Settings() {
                    lit one is what is happening or what would happen if they
                    pressed it. */
                 options={[
-                  ['on', s.soundOn],
-                  ['off', s.soundOff],
+                  ['on', t('settings.on')],
+                  ['off', t('settings.off')],
                 ]}
               />
             </Row>
+            {/* Reachable during play, not only from the ladder — the words turn
+                up in the turn log and the review, which is where someone is
+                most likely to hit one they do not know. */}
+            <button
+              onClick={() => setGlossary(true)}
+              className="mt-4 w-full rounded-[3px] px-3 py-2 text-start text-xs transition-colors"
+              style={{ border: '1px solid var(--app-line)', color: 'var(--text-dim)' }}
+            >
+              {t('glossary.open')}
+            </button>
           </Popover.Popup>
         </Popover.Positioner>
       </Popover.Portal>
+      {glossary && (
+        <div className="fixed inset-0 z-30">
+          <Glossary lang={st.lang} onClose={() => setGlossary(false)} />
+        </div>
+      )}
     </Popover.Root>
   )
 }

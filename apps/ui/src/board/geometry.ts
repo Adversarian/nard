@@ -113,7 +113,13 @@ export function pointGeom(p: number): PointGeom {
 /** Triangle path for a point, with a slightly softened apex. */
 export function pointPath(g: PointGeom): string {
   const half = GEO.u / 2
-  const soft = 0.05 // real inlay is not razor-sharp; a hard tip reads as clip-art
+  /*
+   * Real inlay is not razor-sharp — a mathematically perfect point reads as
+   * clip-art, and no craftsman cuts one. But this was 0.05, which is a tenth of
+   * the point's width, and at any size worth looking at the tips came out blunt,
+   * like fat fingers rather than veneer. A hint of relief, not a rounded end.
+   */
+  const soft = 0.022
   const tipY = g.apexY - g.dir * soft
   return [
     `M ${g.x - half} ${g.baseY}`,
@@ -122,6 +128,24 @@ export function pointPath(g: PointGeom): string {
     `L ${g.x + half} ${g.baseY}`,
     'Z',
   ].join(' ')
+}
+
+/**
+ * The two sloping sides of a point, separately.
+ *
+ * A single outline round a shape reads as an outline; a piece let into a
+ * surface has ONE side catching the light and the other in shadow, and that
+ * difference is what says "inset" rather than "drawn on top". Under the board's
+ * upper-left light the left-hand slope is the lit one.
+ */
+export function pointEdges(g: PointGeom): { lit: string; shade: string } {
+  const half = GEO.u / 2
+  const soft = 0.022
+  const tipY = g.apexY - g.dir * soft
+  return {
+    lit: `M ${g.x - half} ${g.baseY} L ${g.x - soft} ${tipY}`,
+    shade: `M ${g.x + half} ${g.baseY} L ${g.x + soft} ${tipY}`,
+  }
 }
 
 /**

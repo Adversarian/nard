@@ -103,15 +103,25 @@
      out within a couple of percent of the field it sat on and disappeared;
      both are lifted here until they carry at the tip, where the sheen is
      darkest. Check the tip, not the base, when retuning these. */
-  --point-a: #b4482d;
-  --point-a-lo: #6b2818;
+  /*
+   * Desaturated, not darkened.
+   *
+   * These were #b4482d / #3c8f77 — the same lightness, but saturated enough
+   * that the bone underneath them had nothing left to show, so the points read
+   * as flat vector triangles no matter how good the material was. Saturation
+   * came down about a quarter at constant lightness, which keeps the contrast
+   * against the field that the earlier fix was for, and lets the mottling
+   * through. Reduce saturation before reaching for more texture.
+   */
+  --point-a: #a4513d;
+  --point-a-lo: #63301f;
   /* Lifted from #2f6f5d, which sat 13 lightness points under the oxblood. Two
      point colours want to be within a few points of each other or the darker
      one stops reading as a point and starts reading as more field — which is
      exactly what it did. Match LIGHTNESS between the pair; the hues can be as
      far apart as you like. */
-  --point-b: #3c8f77;
-  --point-b-lo: #1e5546;
+  --point-b: #478472;
+  --point-b-lo: #24493f;
   --point-hi: #f2e5c6;
   --point-seam: #e8d9b4;
 
@@ -180,11 +190,15 @@
   --point-hi: #ffffff;
   --point-seam: #0a1c16;
 
-  --khatam-ground: #14100b;
-  --khatam-bone: #c8bfa6;
-  --khatam-brass: #9a8c6c;
-  --khatam-brass-hi: #bcae8c;
-  --khatam-brass-lo: #5a4f36;
+  /* Plain, as the name promises. A tournament board has a trim line, not
+     marquetry — and carrying the full khatam band into it made the three
+     themes recolours of one board rather than three boards. */
+  --khatam-ground: #241c12;
+  --khatam-bone: #6b6353;
+  --khatam-brass: #6f6446;
+  --khatam-brass-hi: #857a58;
+  --khatam-brass-lo: #4a4231;
+  --inlay-band-a: 0.5;
 
   /* Brighter than the bone points so light checkers stay distinct from the
      tan point they stand on. */

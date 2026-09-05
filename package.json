@@ -23,7 +23,8 @@
     "live": "tsx tools/live.ts",
     "pointer": "tsx tools/pointer.ts",
     "screens": "tsx tools/screens.ts",
-    "pacing": "tsx tools/pacing.ts"
+    "pacing": "tsx tools/pacing.ts",
+    "reviewpack": "tsx tools/reviewpack.ts"
   },
   "devDependencies": {
     "@playwright/test": "1.62.1",

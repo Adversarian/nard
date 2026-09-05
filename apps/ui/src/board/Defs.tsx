@@ -21,6 +21,7 @@ import fieldTex from '../assets/textures/field.webp'
 import bandTex from '../assets/textures/band.webp'
 import boneTex from '../assets/textures/bone.webp'
 import ebonyTex from '../assets/textures/ebony.webp'
+import spineTex from '../assets/textures/spine.webp'
 
 /**
  * Shared SVG materials: wood, khatam inlay, turned checkers, dice, shadows.
@@ -92,8 +93,8 @@ export function BoardDefs() {
       <linearGradient id="bar-light" x1="0" y1="0" x2="1" y2="0">
         <stop offset="0" stopColor="#000" stopOpacity="0.55" />
         <stop offset="0.13" stopColor="#fff" stopOpacity="0.13" />
-        <stop offset="0.45" stopColor="#000" stopOpacity="0.12" />
-        <stop offset="1" stopColor="#000" stopOpacity="0.6" />
+        <stop offset="0.45" stopColor="#000" stopOpacity="0.1" />
+        <stop offset="1" stopColor="#000" stopOpacity="0.38" />
       </linearGradient>
 
       {/* --- inset walls ------------------------------------------------ */}
@@ -128,12 +129,24 @@ export function BoardDefs() {
         <stop offset="0.7" stopColor="var(--frame-hi)" stopOpacity="0" />
       </linearGradient>
 
-      {/* Raised edges: bright lip on the lit side, dark on the far side. */}
-      <linearGradient id="edge-h" x1="0" y1="0" x2="1" y2="0">
-        <stop offset="0" stopColor="var(--frame-hi)" stopOpacity="0.55" />
-        <stop offset="0.1" stopColor="#000" stopOpacity="0" />
-        <stop offset="0.9" stopColor="#000" stopOpacity="0.35" />
-        <stop offset="1" stopColor="#000" stopOpacity="0.7" />
+      {/*
+        The shadow a raised strip throws onto the field beside it.
+        ONE SIDE ONLY. The light is upper-left, so a raised bar shadows the
+        field to its RIGHT and does nothing to the field on its left.
+
+        What this replaces spanned the bar AND a slice of field on both sides,
+        with a bright stop at one end and a black one at the other — so it
+        painted a pale wash onto the point left of the bar and a dark one onto
+        the point right of it. Measured off a render: a luminance spike of 56
+        against a field of 23, ten pixels clear of the bar's own edge. That is
+        the "the left and right parts seep into the bar" report, and it is also
+        why the brass wire looked off-centre — the wash widened the bar's
+        apparent left side while the wire stayed where it belonged.
+      */}
+      <linearGradient id="cast-right" x1="0" y1="0" x2="1" y2="0">
+        <stop offset="0" stopColor="#000" stopOpacity="0.32" />
+        <stop offset="0.45" stopColor="#000" stopOpacity="0.11" />
+        <stop offset="1" stopColor="#000" stopOpacity="0" />
       </linearGradient>
 
       {/* The tray well, sunk deepest of anything on the board. */}
@@ -183,6 +196,25 @@ export function BoardDefs() {
         y={FIELD_Y}
       >
         <image href={fieldTex} width={GEO.innerW} height={GEO.innerH} preserveAspectRatio="none" />
+      </pattern>
+
+      {/*
+        The bar, and the tray divider, get their OWN timber.
+
+        Both are narrow VERTICAL members, and the case texture is mapped across
+        the whole board — so a slice of it running down the bar showed grain
+        travelling ACROSS the piece instead of along it. Grain that contradicts
+        the shape of the object it is on reads as fake before you can say why.
+
+        It is also sampled far denser than the case: the tile repeats every 2.6
+        units down the bar rather than being stretched over the board's full
+        height, so at 1920x1080 the grain is near its native resolution instead
+        of blown up two and a half times and soft. That softness was most of
+        what remained of "the board still feels a bit cheap" — the bar is the
+        largest unbroken piece of wood on the board and every defect in it shows.
+      */}
+      <pattern id="tex-spine" patternUnits="userSpaceOnUse" width={1.15} height={2.6}>
+        <image href={spineTex} width={1.15} height={2.6} preserveAspectRatio="none" />
       </pattern>
 
       {/* --- checker and die materials ----------------------------------- */}
@@ -310,12 +342,38 @@ export function BoardDefs() {
       </radialGradient>
 
       {/* --- board shadow ----------------------------------------------- */}
-      {/* Two-part: a tight dark contact shadow and a wide soft ambient one.
-          A single blur reads as a sticker with a glow; the pair reads as an
-          object resting on a surface. */}
-      <filter id="board-shadow" x="-20%" y="-20%" width="140%" height="150%">
-        <feDropShadow dx="0" dy="0.09" stdDeviation="0.1" floodColor="#000" floodOpacity="0.7" result="tight" />
-        <feDropShadow in="tight" dx="0" dy="0.55" stdDeviation="0.85" floodColor="#000" floodOpacity="0.5" />
+      {/*
+        Warm, and restrained.
+
+        This was two black `feDropShadow` layers at 0.7 and 0.5 — which the
+        design doc forbids in as many words ("cast shadows are `--shadow`, never
+        black") and which I wrote anyway. Black under a warm board does not read
+        as a shadow; it reads as a grey rectangular halo behind a cut-out, and
+        on the paper theme it was the single loudest thing on the screen.
+
+        `floodColor` goes through `style`, not the attribute: a CSS custom
+        property does not resolve in an SVG presentation attribute, so the
+        theme's own shadow colour only reaches the filter this way.
+
+        Two layers still, because one blur reads as a sticker with a glow: a
+        tight contact shadow where the case meets the table, and a wide, weak
+        ambient one. Both much lighter than before.
+      */}
+      <filter id="board-shadow" x="-15%" y="-15%" width="130%" height="140%">
+        <feDropShadow
+          dx="0"
+          dy="0.06"
+          stdDeviation="0.07"
+          style={{ floodColor: 'var(--shadow)', floodOpacity: 0.5 }}
+          result="tight"
+        />
+        <feDropShadow
+          in="tight"
+          dx="0"
+          dy="0.34"
+          stdDeviation="0.6"
+          style={{ floodColor: 'var(--shadow)', floodOpacity: 0.28 }}
+        />
       </filter>
     </defs>
   )
@@ -371,9 +429,9 @@ function checkerMaterial(side: 'light' | 'dark') {
         say the middle is not flat.
       */}
       <radialGradient id={`dish-${side}`} cx="0.66" cy="0.72" r="0.8">
-        <stop offset="0" stopColor="#fff" stopOpacity={dark ? 0.07 : 0.2} />
+        <stop offset="0" stopColor="#fff" stopOpacity={dark ? 0.06 : 0.12} />
         <stop offset="0.55" stopColor="#fff" stopOpacity="0" />
-        <stop offset="1" stopColor="#000" stopOpacity={dark ? 0.22 : 0.1} />
+        <stop offset="1" stopColor="#000" stopOpacity={dark ? 0.22 : 0.12} />
       </radialGradient>
     </g>
   )

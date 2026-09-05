@@ -5,9 +5,10 @@
     "rootDir": "src",
     "jsx": "react-jsx",
     "noEmit": false,
-    "types": ["vite/client"]
+    "types": ["vite/client"],
+    "resolveJsonModule": true
   },
-  "include": ["src/**/*"],
+  "include": ["src/**/*", "src/**/*.json"],
   "references": [
     { "path": "../../packages/engine" },
     { "path": "../../packages/ai" },
