@@ -64,7 +64,7 @@ export function Outcome({
         className="flex w-[24rem] flex-col items-center rounded-[3px] px-8 py-7 text-center"
         style={{ background: 'var(--app-panel)', border: '1px solid var(--inlay)' }}
       >
-        <div className="text-[0.65rem] uppercase tracking-[0.25em]" style={{ color: 'var(--text-dim)' }}>
+        <div className="text-label uppercase tracking-[0.25em]" style={{ color: 'var(--text-dim)' }}>
           {matchOver ? s.matchOver : fa ? 'پایان بازی' : 'Game over'}
         </div>
 
@@ -134,7 +134,7 @@ function Side({ label, value, lead }: { label: string; value: string; lead: bool
         {value}
       </div>
       <div
-        className="mt-1.5 truncate text-[0.65rem] uppercase tracking-[0.14em]"
+        className="mt-1.5 truncate text-label uppercase tracking-[0.14em]"
         style={{ color: 'var(--text-dim)' }}
       >
         {label}

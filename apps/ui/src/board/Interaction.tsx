@@ -160,6 +160,10 @@ export function Interaction({
         })}
 
       {/* the bar, for entering */}
+      {/* It gets the same hover handling as a point. Without it, a checker on
+          the bar was the one piece on the board that did not lift under the
+          cursor — and being on the bar is exactly when a player is looking for
+          reassurance that the thing is pickable at all. */}
       {movable.includes(BAR) && (
         <rect
           data-point={BAR}
@@ -170,6 +174,8 @@ export function Interaction({
           fill="transparent"
           style={{ cursor: 'pointer' }}
           onPointerDown={press(BAR)}
+          onPointerEnter={() => onHover(BAR)}
+          onPointerLeave={() => onHover(null)}
         />
       )}
 

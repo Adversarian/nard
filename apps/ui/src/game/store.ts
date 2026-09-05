@@ -39,10 +39,11 @@ import {
   chooseOpponentMove,
   DEFAULT_OPPONENT,
   HOP_GAP_MS,
+  DICE_SETTLE_MS,
   opponentTakesDouble,
+  READ_THE_ROLL_MS,
   shouldOpponentDouble,
   sleep,
-  THINK_FLOOR_MS,
   type OpponentConfig,
 } from './opponent'
 
@@ -231,7 +232,7 @@ export const useGame = create<GameStore>((set, get) => {
           // The player doubled; the opponent answers.
           set({ thinking: true })
           const take = await opponentTakesDouble(state)
-          await sleep(get().fast ? 0 : THINK_FLOOR_MS)
+          await sleep(get().fast ? 0 : READ_THE_ROLL_MS)
           set({ thinking: false })
           take ? get().take() : get().passCube()
           continue
@@ -250,7 +251,8 @@ export const useGame = create<GameStore>((set, get) => {
             }
           }
           get().roll()
-          await sleep(get().fast ? 0 : 220)
+          // Let the dice finish tumbling and be READ before anything moves.
+          await sleep(get().fast ? 0 : DICE_SETTLE_MS)
           continue
         }
 
@@ -259,7 +261,7 @@ export const useGame = create<GameStore>((set, get) => {
           const started = Date.now()
           const { move, degraded } = await chooseOpponentMove(state, opponent)
           // A floor, not an addition: a slow evaluation does not stack on top.
-          const floor = get().fast ? 0 : THINK_FLOOR_MS
+          const floor = get().fast ? 0 : READ_THE_ROLL_MS
           await sleep(Math.max(0, floor - (Date.now() - started)))
           set({ thinking: false, degraded: get().degraded || degraded })
 

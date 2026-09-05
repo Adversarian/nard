@@ -3,6 +3,7 @@ import type { Affordances, LogEntry } from './store'
 import type { Opponent } from '../ladder/opponents'
 import { digits, STRINGS, type Lang } from '../i18n/strings'
 import { Button } from '../chrome/Button'
+import { Notation } from '../chrome/Notation'
 
 const portraits = import.meta.glob<string>('../assets/portraits/*.webp', {
   eager: true,
@@ -79,7 +80,7 @@ export function Rail({
 
   return (
     <aside
-      className="flex w-[17.5rem] shrink-0 flex-col text-sm 2xl:w-[21rem] 2xl:text-[0.95rem]"
+      className="flex w-[19rem] shrink-0 flex-col text-sm"
       style={{ color: 'var(--text)' }}
     >
       {/* ---- who you are playing ------------------------------------- */}
@@ -93,12 +94,12 @@ export function Rail({
           style={{ border: '1px solid var(--inlay)', opacity: theirTurn ? 1 : 0.7 }}
         />
         <div className="min-w-0">
-          <div className="truncate text-[1.05rem] leading-tight">{opponent.name[lang]}</div>
+          <div className="truncate text-base leading-tight">{opponent.name[lang]}</div>
           <div className="truncate text-xs leading-tight" style={{ color: 'var(--inlay)' }}>
             {opponent.style[lang]}
           </div>
           <div
-            className="mt-2 flex items-center gap-1.5 text-[0.7rem] leading-tight"
+            className="mt-2 flex items-center gap-1.5 text-label leading-tight"
             style={{ color: 'var(--text-dim)' }}
           >
             <span
@@ -123,7 +124,7 @@ export function Rail({
         <div className="grid grid-cols-[1fr_auto_1fr] items-center">
           <Score label={s.you} value={n(state.match.score.light)} lead={state.match.score.light > state.match.score.dark} />
           <div className="px-3 text-center">
-            <div className="text-[0.6rem] uppercase tracking-[0.16em]" style={{ color: 'var(--text-dim)' }}>
+            <div className="text-label uppercase tracking-[0.16em]" style={{ color: 'var(--text-dim)' }}>
               {s.playTo}
             </div>
             <div className="mt-0.5 text-base tabular-nums" style={{ color: 'var(--text-dim)' }}>
@@ -249,7 +250,7 @@ function Rule() {
 function Head({ children }: { children: React.ReactNode }) {
   return (
     <div
-      className="text-[0.6rem] uppercase tracking-[0.2em]"
+      className="text-label uppercase tracking-[0.2em]"
       style={{ color: 'var(--text-dim)' }}
     >
       {children}
@@ -269,7 +270,7 @@ function Tag({
   return (
     <span
       {...(title ? { title } : {})}
-      className="rounded-[2px] px-1.5 py-0.5 text-[0.62rem] uppercase tracking-wider"
+      className="rounded-[2px] px-1.5 py-0.5 text-label uppercase tracking-wider"
       style={{
         border: `1px solid ${warn ? 'var(--warn)' : 'var(--app-line)'}`,
         color: warn ? 'var(--warn)' : 'var(--text-dim)',
@@ -291,13 +292,13 @@ function Score({ label, value, lead }: { label: string; value: string; lead: boo
   return (
     <div className="text-center">
       <div
-        className="text-[2.1rem] leading-none tabular-nums"
+        className="text-[2.6rem] leading-none tabular-nums"
         style={{ color: lead ? 'var(--inlay)' : 'var(--text)', fontWeight: 300 }}
       >
         {value}
       </div>
       <div
-        className="mt-1.5 truncate text-[0.6rem] uppercase tracking-[0.16em]"
+        className="mt-1.5 truncate text-label uppercase tracking-[0.16em]"
         style={{ color: 'var(--text-dim)' }}
       >
         {label}
@@ -338,7 +339,7 @@ function Race({
           {n(you)}
         </span>
         <span
-          className="text-[0.6rem] uppercase tracking-[0.16em]"
+          className="text-label uppercase tracking-[0.16em]"
           style={{ color: 'var(--text-dim)' }}
         >
           {lead === 0 ? s.level : ahead ? s.youLeadBy(n(lead)) : s.theyLeadBy(n(-lead))}
@@ -361,7 +362,7 @@ function Race({
         />
       </div>
       <div
-        className="mt-2 flex justify-between text-[0.6rem] uppercase tracking-[0.14em]"
+        className="mt-2 flex justify-between text-label uppercase tracking-[0.14em]"
         style={{ color: 'var(--text-dim)' }}
       >
         <span>{s.you}</span>
@@ -419,14 +420,14 @@ const PIPS: Record<number, ReadonlyArray<readonly [number, number]>> = {
 }
 
 function MiniDice({ dice }: { dice: readonly [number, number] }) {
-  const d = 9 // one die, in px
+  const d = 11 // one die, in px
   const gap = 3
   return (
     <svg
       width={d * 2 + gap}
       height={d}
       viewBox={`0 0 ${d * 2 + gap} ${d}`}
-      className="mt-[3px] shrink-0"
+      className="mt-[4px] shrink-0"
       aria-hidden
     >
       {dice.map((v, i) => (
@@ -453,35 +454,11 @@ function MiniDice({ dice }: { dice: readonly [number, number] }) {
   )
 }
 
-/**
- * Split a turn's notation into its individual plays.
- *
- * The engine emits standard shorthand — "8/5 6/5", "bar/20* 6/5", "1/off" —
- * which is the right interchange format and the wrong thing to put in front of
- * a person. The slash is doing the work of an arrow, and the asterisk is doing
- * the work of the word "hit"; neither is legible to anyone who has not been
- * told. Parsing it here lets the row say the same thing with a real arrow and a
- * mark you can see.
- */
-function plays(notation: string) {
-  return notation
-    .split(/\s+/)
-    .filter(Boolean)
-    .map((token) => {
-      const hit = token.endsWith('*')
-      const body = hit ? token.slice(0, -1) : token
-      const [from = '', to = ''] = body.split('/')
-      return { from, to, hit }
-    })
-}
-
 /** One line of the turn log. */
 function Line({ entry, lang }: { entry: LogEntry; lang: Lang }) {
   const s = STRINGS[lang]
   const n = (v: number) => digits(v, lang)
   const light = entry.side === 'light'
-  const term = (v: string) =>
-    v === 'bar' ? s.barPoint : v === 'off' ? s.offTray : n(Number(v))
 
   return (
     <li className="flex items-start gap-2.5 text-xs">
@@ -492,23 +469,10 @@ function Line({ entry, lang }: { entry: LogEntry; lang: Lang }) {
           border: `1px solid ${light ? 'var(--checker-light-lo)' : 'var(--checker-dark-rim)'}`,
         }}
       />
-      {entry.dice ? <MiniDice dice={entry.dice} /> : <span className="w-[21px] shrink-0" />}
+      {entry.dice ? <MiniDice dice={entry.dice} /> : <span className="w-[25px] shrink-0" />}
 
       {entry.kind === 'move' ? (
-        <span className="flex flex-wrap gap-x-2.5 gap-y-1" dir="ltr">
-          {plays(entry.text).map((m, i) => (
-            <span key={i} className="whitespace-nowrap tabular-nums">
-              {term(m.from)}
-              <span style={{ color: 'var(--text-dim)' }}>→</span>
-              {term(m.to)}
-              {m.hit && (
-                <span className="ms-0.5" style={{ color: 'var(--bad)' }} title={s.hit}>
-                  ✕
-                </span>
-              )}
-            </span>
-          ))}
-        </span>
+        <Notation text={entry.text} lang={lang} />
       ) : (
         <span style={{ color: 'var(--text-dim)' }}>
           {entry.kind === 'no-play'

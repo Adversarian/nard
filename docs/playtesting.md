@@ -33,6 +33,7 @@ turns first and captures the view a player actually sits in front of; add
 
 ```bash
 pnpm pointer       # presses, drags and releases a REAL mouse
+pnpm pacing        # times the opponent's turn at normal speed
 ```
 
 Everything else here — `pnpm playtest`, `pnpm sound`, `pnpm live` — drives the
@@ -45,6 +46,17 @@ the app found it in a minute.
 `pnpm pointer` drags a checker to a legal point, drags one off the board to check
 it goes back, clicks source-then-destination, and fails on any console error.
 Anything that changes how a player physically handles the board goes there.
+
+`pnpm pacing` covers the same blind spot in time. Everything else runs `fast`,
+which zeroes the opponent's deliberate pauses, so a driver can play a thousand
+turns without ever exercising the timing a person actually sits through. Two
+traps found while writing it, both worth knowing: **sound timestamps are the
+wrong clock** — a placement sound fires when the travel animation ENDS, and the
+player's own checkers are still in the air when the opponent rolls, so timing
+one against the other reported 306ms for a pause of well over a second. And
+**a turn's last hop commits it**, which empties the draft, so counting draft
+growth alone misses the final checker and a two-checker turn yields no gaps at
+all.
 
 One trap it is now hardened against, worth knowing before writing another
 driver: **`__nard` answers even when the board is not on screen.** The store

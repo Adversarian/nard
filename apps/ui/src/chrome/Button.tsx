@@ -42,7 +42,7 @@ export function Button({
       {children}
       {hint && (
         <kbd
-          className="rounded-[2px] px-1 text-[0.6rem] uppercase opacity-55"
+          className="rounded-[2px] px-1 text-label uppercase opacity-55"
           style={{ border: `1px solid ${primary ? 'var(--app-bg)' : 'var(--app-line)'}` }}
         >
           {hint}

@@ -101,8 +101,33 @@ shadow on paper is warm and light, and reusing a dark one punches holes in it.
 - Every numeral in the app is `font-variant-numeric: tabular-nums`. Pip counts
   and equities must not jitter as they change.
 
-Scale: `12 / 14 / 16 / 20 / 28 / 40`. Weights: 400 body, 500 emphasis, 700
-headings only. Nothing lighter than 400 — it falls apart in Persian.
+### The scale is one place, and it moves with the window
+
+Defined in `styles/theme.css` under `@theme` as `--text-label` through
+`--text-3xl`, which OVERRIDE Tailwind's built-in steps. Change a size there and
+it changes everywhere it is used; that is the point, and it is why no component
+should carry an arbitrary `text-[0.63rem]`. The app had a dozen such values
+between 0.6 and 0.7rem before this, which is not a scale, it is a drift.
+
+**The root font size is `clamp(15px, 0.45vw + 10.5px, 18px)`.** Everything sized
+in rem — type, padding, gaps, the rail's own width — grows and shrinks together
+with the window. A fixed scale cannot serve both ends of the range this app
+runs at: type comfortable at 1920×1080 turned the rail into a third of a 960px
+window, and type that fitted the small window was unreadable on a large monitor.
+Both ends are clamped: below 15px the labels stop being legible, above 18px the
+chrome starts taking width the board wants. The board is sized by flex, not rem,
+so it simply takes what is left.
+
+Consequence worth knowing: **do not add a `2xl:` type or width override.** The
+root clamp already scales those, and a breakpoint override on top of it grows
+the same element twice.
+
+Weights: 400 body, 500 emphasis. Large numerals go LIGHTER, not heavier — the
+match score is 300, because a big number set bold shouts and nothing on that
+rail needs shouting. Nothing below 300; it falls apart in Persian.
+
+Persian sets larger than Latin at the same nominal size and Vazirmatn is no
+exception, so check both languages before moving any of these.
 
 ## Board geometry
 
@@ -336,8 +361,26 @@ those values are stated here as numbers rather than adjectives.
 **`prefers-reduced-motion`:** every entry above degrades to a `120ms` linear
 opacity change with no transform. This is not optional and is checked in review.
 
-Sound (checker click, dice on wood, cube turn) is recorded from real equipment,
-defaults to on, single volume control, and is silent when the window is unfocused.
+### The opponent is paced so it can be followed
+
+The opponent knows its move instantly. Playing at that speed means the dice
+appear and the checkers are already somewhere else, and the player is left
+reconstructing the turn from the board instead of watching it happen.
+
+| | Value | What it is |
+| --- | --- | --- |
+| `DICE_SETTLE_MS` | 430 | covers the 380ms tumble, with a little over. **Nothing moves while the dice are still turning.** |
+| `READ_THE_ROLL_MS` | 850 | settled dice sitting there before the first checker lifts. A FLOOR, not an addition — a slow evaluation is absorbed by it, so the strongest opponent is not also the slowest to watch. |
+| `HOP_GAP_MS` | 340 | one checker per beat. A four-checker doubles turn played faster than this reads as the board rearranging itself. |
+
+Measured end to end that is about **1.3 seconds from the dice landing to the
+first checker moving**, of which the first 0.4 is the tumble. `pnpm pacing`
+measures it from the store at frame resolution and fails if it drops below
+0.9s — every other harness runs with `fast` on, which zeroes all three, so
+without that check the pacing could vanish silently.
+
+Sound is CC0 library material, defaults to on, single volume control, and is
+silent when the window is unfocused.
 
 ## Assets
 

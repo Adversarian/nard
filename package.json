@@ -22,7 +22,8 @@
     "sound": "tsx tools/sound.ts",
     "live": "tsx tools/live.ts",
     "pointer": "tsx tools/pointer.ts",
-    "screens": "tsx tools/screens.ts"
+    "screens": "tsx tools/screens.ts",
+    "pacing": "tsx tools/pacing.ts"
   },
   "devDependencies": {
     "@playwright/test": "1.62.1",

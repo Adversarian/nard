@@ -26,7 +26,7 @@ export function Wordmark({ size = 'sm' }: { size?: 'sm' | 'lg' }) {
         aria-hidden
       />
       <span
-        className={`uppercase ${big ? 'text-xs tracking-[0.45em]' : 'text-[0.65rem] tracking-[0.38em]'}`}
+        className={`uppercase ${big ? 'text-xs tracking-[0.45em]' : 'text-label tracking-[0.38em]'}`}
         style={{ color: 'var(--text-dim)', lineHeight: 1 }}
       >
         nard

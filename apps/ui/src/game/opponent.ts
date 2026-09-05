@@ -28,10 +28,33 @@ export const DEFAULT_OPPONENT: OpponentConfig = {
   side: 'dark',
 }
 
-/** Minimum time between the roll landing and the first checker moving. */
-export const THINK_FLOOR_MS = 520
+/**
+ * How the opponent's turn is paced.
+ *
+ * All three exist for one reason: a person has to be able to FOLLOW the turn.
+ * The opponent knows its move instantly, and playing it at that speed means the
+ * dice appear and the checkers are already elsewhere — the player is left
+ * reconstructing what happened from the board instead of watching it happen.
+ *
+ * The numbers are chosen against the animations they overlap, not by feel:
+ *
+ *   DICE_SETTLE  covers the 380ms tumble in docs/design-language.md, with a
+ *                little over, so the dice are STILL before anything else moves.
+ *                Nothing should happen while they are still turning.
+ *   READ_THE_ROLL is how long the settled dice sit there before the first
+ *                checker lifts. It is a floor, not an addition: a slow
+ *                evaluation is absorbed by it rather than stacking on top, so
+ *                the strongest opponent is not also the slowest to watch.
+ *   HOP_GAP      is one checker per beat. A four-checker doubles turn played
+ *                any faster than this reads as the board rearranging itself.
+ *
+ * `fast` zeroes all three for automated runs — the pauses exist for a person,
+ * and a script cannot use them.
+ */
+export const DICE_SETTLE_MS = 430
+export const READ_THE_ROLL_MS = 850
 /** Gap between checkers within one turn. */
-export const HOP_GAP_MS = 220
+export const HOP_GAP_MS = 340
 
 const PLIES: Record<DifficultyRung, 0 | 1 | 2> = { 1: 0, 2: 0, 3: 1, 4: 1, 5: 2, 6: 2 }
 

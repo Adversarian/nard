@@ -83,6 +83,7 @@ pnpm live              # capture the PLAY view mid-match, with chrome (see §6)
 pnpm screens           # capture the ladder, the outcome and the review
 pnpm motion            # measure animations against the spec (see §6)
 pnpm pointer           # drive the board with REAL mouse events (see §6)
+pnpm pacing            # measure how long the opponent's turn takes to watch
 pnpm playtest          # play complete games through the real UI
 pnpm difftest          # engine move generation vs. gnubg
 pnpm selfplay          # headless AI-vs-AI benchmark
@@ -175,6 +176,12 @@ ever pressed a mouse button.
 `pnpm pointer` presses, moves and releases a real pointer, and fails on any
 console error. Anything that changes how a player physically manipulates the
 board belongs there.
+
+`pnpm pacing` is the same blind spot in the time dimension. Every other harness
+runs with `fast` on, which zeroes the opponent's deliberate pauses — so the
+pacing could drift to nothing and the whole suite would stay green. It watches
+the store at frame resolution and reports how long the dice sit still before the
+first checker moves.
 
 ## 7. Testing
 

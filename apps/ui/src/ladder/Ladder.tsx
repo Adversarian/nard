@@ -85,7 +85,7 @@ export function Ladder({
                 />
                 {beaten && (
                   <span
-                    className="absolute -bottom-2 flex h-5 w-5 items-center justify-center rounded-full text-[0.7rem]"
+                    className="absolute -bottom-2 flex h-5 w-5 items-center justify-center rounded-full text-label"
                     style={{
                       [fa ? 'left' : 'right']: '-0.5rem',
                       background: 'var(--inlay)',
@@ -136,7 +136,7 @@ export function Ladder({
       <div className="flex flex-col items-center gap-3">
         <div className="flex items-center gap-3">
           <span
-            className="text-[0.6rem] uppercase tracking-[0.2em]"
+            className="text-label uppercase tracking-[0.2em]"
             style={{ color: 'var(--text-dim)' }}
           >
             {fa ? 'مسابقه تا' : 'Match to'}
@@ -161,7 +161,7 @@ export function Ladder({
             ))}
           </div>
           <span
-            className="text-[0.6rem] uppercase tracking-[0.2em]"
+            className="text-label uppercase tracking-[0.2em]"
             style={{ color: 'var(--text-dim)' }}
           >
             {fa ? 'امتیاز' : 'points'}
