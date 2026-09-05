@@ -8,6 +8,7 @@ import {
   GEO,
   TRAY_X,
   offSlab,
+  pointEdges,
   pointGeom,
   pointPath,
   type HomeSide,
@@ -228,17 +229,16 @@ function Points() {
         // pattern stays symmetric across the bar.
         const a = p % 2 === 1
         const d = pointPath(g)
+        const e = pointEdges(g)
         return (
           <g key={p}>
             <path d={d} fill={`url(#mat-${a ? 'a' : 'b'})`} />
             <path d={d} fill={`url(#tipfade-${g.top ? 'top' : 'bot'})`} />
-            <path
-              d={d}
-              fill="none"
-              stroke="var(--point-seam)"
-              strokeOpacity="0.3"
-              strokeWidth="0.014"
-            />
+            {/* The bevel: lit slope, shadowed slope. One outline all the way
+                round reads as an outline; two differently-lit edges read as a
+                piece set into the field. */}
+            <path d={e.lit} fill="none" stroke="var(--point-seam)" strokeOpacity="0.42" strokeWidth="0.014" />
+            <path d={e.shade} fill="none" stroke="#000" strokeOpacity="0.34" strokeWidth="0.014" />
           </g>
         )
       })}
@@ -410,7 +410,9 @@ function Inlay({ inset }: { inset: number }) {
   const poly = (pts: number[][]) => pts.map(([x, y]) => `${x},${y}`).join(' ')
 
   return (
-    <g>
+    /* `--inlay-band-a` lets a theme dial the ornament down without losing the
+       trim entirely — the tournament board wants a line, not marquetry. */
+    <g style={{ opacity: 'var(--inlay-band-a, 1)' }}>
       <polygon
         points={poly([[x0, y0], [x1, y0], [x1 - w, y0 + w], [x0 + w, y0 + w]])}
         fill="url(#khatam-h)"

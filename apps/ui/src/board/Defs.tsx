@@ -93,8 +93,8 @@ export function BoardDefs() {
       <linearGradient id="bar-light" x1="0" y1="0" x2="1" y2="0">
         <stop offset="0" stopColor="#000" stopOpacity="0.55" />
         <stop offset="0.13" stopColor="#fff" stopOpacity="0.13" />
-        <stop offset="0.45" stopColor="#000" stopOpacity="0.12" />
-        <stop offset="1" stopColor="#000" stopOpacity="0.6" />
+        <stop offset="0.45" stopColor="#000" stopOpacity="0.1" />
+        <stop offset="1" stopColor="#000" stopOpacity="0.38" />
       </linearGradient>
 
       {/* --- inset walls ------------------------------------------------ */}
@@ -144,8 +144,8 @@ export function BoardDefs() {
         apparent left side while the wire stayed where it belonged.
       */}
       <linearGradient id="cast-right" x1="0" y1="0" x2="1" y2="0">
-        <stop offset="0" stopColor="#000" stopOpacity="0.5" />
-        <stop offset="0.45" stopColor="#000" stopOpacity="0.16" />
+        <stop offset="0" stopColor="#000" stopOpacity="0.32" />
+        <stop offset="0.45" stopColor="#000" stopOpacity="0.11" />
         <stop offset="1" stopColor="#000" stopOpacity="0" />
       </linearGradient>
 
@@ -342,12 +342,38 @@ export function BoardDefs() {
       </radialGradient>
 
       {/* --- board shadow ----------------------------------------------- */}
-      {/* Two-part: a tight dark contact shadow and a wide soft ambient one.
-          A single blur reads as a sticker with a glow; the pair reads as an
-          object resting on a surface. */}
-      <filter id="board-shadow" x="-20%" y="-20%" width="140%" height="150%">
-        <feDropShadow dx="0" dy="0.09" stdDeviation="0.1" floodColor="#000" floodOpacity="0.7" result="tight" />
-        <feDropShadow in="tight" dx="0" dy="0.55" stdDeviation="0.85" floodColor="#000" floodOpacity="0.5" />
+      {/*
+        Warm, and restrained.
+
+        This was two black `feDropShadow` layers at 0.7 and 0.5 — which the
+        design doc forbids in as many words ("cast shadows are `--shadow`, never
+        black") and which I wrote anyway. Black under a warm board does not read
+        as a shadow; it reads as a grey rectangular halo behind a cut-out, and
+        on the paper theme it was the single loudest thing on the screen.
+
+        `floodColor` goes through `style`, not the attribute: a CSS custom
+        property does not resolve in an SVG presentation attribute, so the
+        theme's own shadow colour only reaches the filter this way.
+
+        Two layers still, because one blur reads as a sticker with a glow: a
+        tight contact shadow where the case meets the table, and a wide, weak
+        ambient one. Both much lighter than before.
+      */}
+      <filter id="board-shadow" x="-15%" y="-15%" width="130%" height="140%">
+        <feDropShadow
+          dx="0"
+          dy="0.06"
+          stdDeviation="0.07"
+          style={{ floodColor: 'var(--shadow)', floodOpacity: 0.5 }}
+          result="tight"
+        />
+        <feDropShadow
+          in="tight"
+          dx="0"
+          dy="0.34"
+          stdDeviation="0.6"
+          style={{ floodColor: 'var(--shadow)', floodOpacity: 0.28 }}
+        />
       </filter>
     </defs>
   )

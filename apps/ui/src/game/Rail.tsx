@@ -98,13 +98,21 @@ export function Rail({
           <div className="truncate text-xs leading-tight" style={{ color: 'var(--inlay)' }}>
             {t(opponentKey(opponent.id, 'style'))}
           </div>
+          {/* Whose turn it is, said plainly.
+              It was a six-pixel dot beside dim grey text — the quietest thing
+              in a rail whose loudest thing is a solid brass button, which is
+              the wrong way round. The state a player checks most often should
+              not be the one they have to hunt for. */}
           <div
-            className="mt-2 flex items-center gap-1.5 text-label leading-tight"
-            style={{ color: 'var(--text-dim)' }}
+            className="mt-2 flex items-center gap-2 text-xs leading-tight transition-colors"
+            style={{ color: theirTurn ? 'var(--inlay)' : 'var(--text)' }}
           >
             <span
-              className="h-1.5 w-1.5 shrink-0 rounded-full transition-colors"
-              style={{ background: theirTurn ? 'var(--inlay)' : 'var(--app-line)' }}
+              className="h-2 w-2 shrink-0 rounded-full transition-colors"
+              style={{
+                background: theirTurn ? 'var(--inlay)' : 'var(--text)',
+                boxShadow: theirTurn ? '0 0 0 3px color-mix(in srgb, var(--inlay) 22%, transparent)' : 'none',
+              }}
             />
             {thinking ? (
               <span className="animate-pulse">{t('play.thinking')}</span>

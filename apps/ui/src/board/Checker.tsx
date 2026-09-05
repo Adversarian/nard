@@ -49,17 +49,22 @@ export function Checker({ side }: { side: Side }) {
 
       <circle cx="0" cy="0" r={r} fill={tex} />
       <circle cx="0" cy="0" r={r} fill={`url(#rim-${side})`} opacity="0.6" />
-      {/* A contour, so the lower-right edge still has a silhouette where the
-          wall gradient goes darker than the point beneath it. */}
-      <circle
-        cx="0"
-        cy="0"
-        r={r - 0.006}
-        fill="none"
-        stroke={dark ? 'var(--checker-dark-rim)' : 'var(--checker-light-lo)'}
-        strokeOpacity={dark ? 0.22 : 0.4}
-        strokeWidth="0.012"
-      />
+      {/* ONE edge cue per checker.
+          Bone gets a contour, because its silhouette against a light point is
+          weak. Ebony does not: it already carries the brass line below, and a
+          contour as well made two concentric rings — which is the difference
+          between a turned piece and a bottle cap. */}
+      {!dark && (
+        <circle
+          cx="0"
+          cy="0"
+          r={r - 0.006}
+          fill="none"
+          stroke="var(--checker-light-lo)"
+          strokeOpacity="0.4"
+          strokeWidth="0.012"
+        />
+      )}
 
       {/* Fresh material on the face, so the wall's shading stops at the wall. */}
       <circle cx="0" cy="0" r={r * 0.86} fill={tex} />
@@ -103,7 +108,11 @@ export function Checker({ side }: { side: Side }) {
         />
       )}
 
-      <circle cx="0" cy="0" r={r * 0.5} fill={`url(#dish-${side})`} />
+      {/* The dish ends exactly ON the groove, not just inside it. At r*0.5
+          against a groove at r*0.58 the two rims sat a hair apart and read as
+          a double ring — which is most of what makes a checker look stamped
+          rather than turned. One circle, one ring. */}
+      <circle cx="0" cy="0" r={r * 0.58} fill={`url(#dish-${side})`} />
 
       <ellipse
         cx={-r * 0.3}

@@ -131,6 +131,24 @@ export function pointPath(g: PointGeom): string {
 }
 
 /**
+ * The two sloping sides of a point, separately.
+ *
+ * A single outline round a shape reads as an outline; a piece let into a
+ * surface has ONE side catching the light and the other in shadow, and that
+ * difference is what says "inset" rather than "drawn on top". Under the board's
+ * upper-left light the left-hand slope is the lit one.
+ */
+export function pointEdges(g: PointGeom): { lit: string; shade: string } {
+  const half = GEO.u / 2
+  const soft = 0.022
+  const tipY = g.apexY - g.dir * soft
+  return {
+    lit: `M ${g.x - half} ${g.baseY} L ${g.x - soft} ${tipY}`,
+    shade: `M ${g.x + half} ${g.baseY} L ${g.x + soft} ${tipY}`,
+  }
+}
+
+/**
  * Up to five checkers sit at full diameter. Beyond that they compress to fit
  * rather than overflowing the point, down to a floor of 0.55 diameters — past
  * which the stack would read as a smear, so it truncates and shows a count chip.

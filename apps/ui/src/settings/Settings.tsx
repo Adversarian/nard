@@ -36,7 +36,11 @@ export function Settings() {
             className="min-w-64 rounded-[3px] p-4 text-sm shadow-2xl outline-none"
             style={{
               background: 'var(--app-panel)',
-              border: '1px solid var(--inlay)',
+              /* A quiet edge and a warm shadow. A bright brass border made it
+                 a gold rectangle pasted over the board rather than something
+                 belonging to the same room. */
+              border: '1px solid var(--app-line)',
+              boxShadow: '0 18px 50px -12px var(--shadow)',
               color: 'var(--text)',
             }}
           >

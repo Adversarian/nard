@@ -130,6 +130,54 @@ for (const theme of ['tournament', 'kaghaz'] as const) {
   await page.close()
 }
 
+/* ---- the glossary -------------------------------------------------------- */
+{
+  const page = await browser.newPage({ viewport: { width: 1600, height: 1000 }, deviceScaleFactor: 2 })
+  await settings(page, { theme: 'khatam', lang: 'en', home: 'right', volume: 0 })
+  await page.getByText('Backgammon terms').click()
+  await page.waitForTimeout(500)
+  await shot(page, 'glossary', 'the glossary, opened from the ladder')
+  await page.close()
+}
+
+/* ---- the end of a game, and the review ----------------------------------- */
+/*
+ * These two were named in the index and never actually captured, which is worse
+ * than omitting them: a reviewer reads the index, sees them listed, and assumes
+ * they were looked at. They are the screens a session ENDS on.
+ */
+{
+  const page = await browser.newPage({ viewport: { width: 1600, height: 1000 }, deviceScaleFactor: 2 })
+  await startMatch(page, { fast: true, opponent: 'davoud', matchLength: 1 })
+  for (let t = 0; t < 400; t += 1) {
+    const phase = await page.evaluate<string>('__nard.state().phase')
+    if (phase === 'game-over' || phase === 'match-over') break
+    if (!(await until(page, PLAYERS_TURN, 80))) break
+    if (phase === 'cube-offered') { await page.evaluate('__nard.take()'); continue }
+    if (phase !== 'to-move') await page.evaluate('__nard.roll()')
+    for (let h = 0; h < 4; h += 1) {
+      const n = await page.evaluate<[number, number] | null>('__nard.hops()[0] ?? null')
+      if (!n) break
+      await page.evaluate(`__nard.move(${n[0]}, ${n[1]})`)
+    }
+  }
+  await page.waitForTimeout(700)
+  await shot(page, 'outcome', 'the end of a match')
+  const buttons = await page.locator('button').allInnerTexts()
+  const idx = buttons.findIndex((t) => /^review$/i.test(t.trim()))
+  if (idx >= 0) {
+    await page.locator('button').nth(idx).click()
+    await page.waitForTimeout(1200)
+    await shot(page, 'review-loading', 'the review while it is still analysing')
+    await page.locator('text=/PR/').first().waitFor({ timeout: 240_000 }).catch(() => {})
+    await page.waitForTimeout(600)
+    await shot(page, 'review', 'the finished match review', true)
+  } else {
+    console.log('  !! no Review button — outcome may not have been reached')
+  }
+  await page.close()
+}
+
 await writeFile(`${OUT}/index.txt`, index.join('\n') + '\n')
 await browser.close()
 console.log(`\n${index.length} images -> ${OUT}/`)
