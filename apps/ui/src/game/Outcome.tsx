@@ -61,8 +61,12 @@ export function Outcome({
         animate={{ y: 0, opacity: 1 }}
         transition={{ type: 'spring', stiffness: 320, damping: 30, delay: 0.05 }}
         dir={fa ? 'rtl' : 'ltr'}
-        className="flex w-[24rem] flex-col items-center rounded-[3px] px-8 py-7 text-center"
-        style={{ background: 'var(--app-panel)', border: '1px solid var(--inlay)' }}
+        className="flex w-[26rem] flex-col items-center rounded-[3px] px-8 py-7 text-center"
+        style={{
+          background: 'var(--app-panel)',
+          border: '1px solid var(--app-line)',
+          boxShadow: '0 24px 60px -14px var(--shadow)',
+        }}
       >
         <div className="text-label uppercase tracking-[0.25em]" style={{ color: 'var(--text-dim)' }}>
           {t(matchOver ? 'outcome.matchOver' : 'outcome.gameOver')}
@@ -103,7 +107,13 @@ export function Outcome({
           </div>
         )}
 
-        <div className="mt-8 flex w-full gap-2.5">
+        {/* Stacked, not side by side.
+            Three of these can be showing at once and the longest label is two
+            words; in a row they wrapped mid-button, which is the sort of thing
+            that only shows up once someone actually captures the screen — and
+            this one was named in the review pack for weeks without ever being
+            photographed. */}
+        <div className="mt-8 flex w-full flex-col gap-2.5">
           {onReview && (
             <Button primary grow autoFocus onClick={onReview}>
               {t('outcome.review')}
