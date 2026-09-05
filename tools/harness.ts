@@ -56,15 +56,29 @@ export async function startMatch(page: Page, opts: StartOptions = {}): Promise<v
   await page.waitForSelector('svg[aria-label="Backgammon board"]', { timeout: 10_000 })
 }
 
-/** Poll a predicate inside the page. Returns false on timeout rather than throwing. */
+/**
+ * Poll a predicate inside the page. Returns false on timeout rather than
+ * throwing — and also if the page navigates out from under it.
+ *
+ * The poll runs as one long-lived async call inside the page, so anything that
+ * replaces the execution context kills it: a Vite hot reload, which happens
+ * whenever a file is touched while a capture is running. That surfaced as
+ * "Execution context was destroyed" and took down a whole screenshot run
+ * several screens in. A driver that cannot see the state it is waiting for
+ * should report that it did not see it, not crash.
+ */
 export async function until(page: Page, expr: string, tries = 200): Promise<boolean> {
-  return page.evaluate<boolean>(`(async () => {
-    for (let i = 0; i < ${tries}; i++) {
-      if (${expr}) return true
-      await new Promise(r => setTimeout(r, 100))
-    }
+  try {
+    return await page.evaluate<boolean>(`(async () => {
+      for (let i = 0; i < ${tries}; i++) {
+        if (${expr}) return true
+        await new Promise(r => setTimeout(r, 100))
+      }
+      return false
+    })()`)
+  } catch {
     return false
-  })()`)
+  }
 }
 
 /** True when it is the player's turn and nothing is animating. */
