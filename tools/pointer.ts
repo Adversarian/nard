@@ -130,6 +130,11 @@ await page.waitForTimeout(250)
   const [hop] = await hops()
   if (hop) {
     const [from] = hop
+    // NOTE: `from` is 25 when the player is on the bar, and the bar is a
+    // legitimate case here — it was the one hit target with no hover handler,
+    // which is how this check found a real bug by failing on maybe one run in
+    // five. Do not narrow it to points 1..24 to make it settle down.
+    //
     // Park the pointer well away first: the previous test left it somewhere,
     // and a checker already hovered would make this pass without proving it.
     await page.mouse.move(5, 5)

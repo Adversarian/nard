@@ -27,6 +27,38 @@
   --font-sans: 'Vazirmatn', ui-sans-serif, system-ui, sans-serif;
   --font-mono: 'IBM Plex Mono', ui-monospace, monospace;
 
+  /*
+   * Type scale.
+   *
+   * Redefined rather than left at Tailwind's defaults, which are tuned for
+   * dense web documents read at arm's length. This is a game played full-screen
+   * on a desktop, often on a large monitor, and it had drifted onto 12px for
+   * most of its secondary text and under 10px for its labels — small enough
+   * that the interface read as cramped no matter how good the board looked.
+   *
+   * Every step is about 1.5px larger than the Tailwind default, and `label` is
+   * a new step for the uppercase micro-type that was previously written as a
+   * dozen different arbitrary values between 0.6 and 0.7rem. Changing a size
+   * here changes it everywhere it is used, which is the point: a scale you can
+   * only adjust in forty places is not a scale.
+   *
+   * Persian sets larger than Latin at the same nominal size and Vazirmatn is no
+   * exception, so these are checked in both languages before they move.
+   */
+  --text-label: 0.75rem;
+  --text-label--line-height: 1.35;
+  --text-xs: 0.85rem;
+  --text-xs--line-height: 1.5;
+  --text-sm: 0.95rem;
+  --text-sm--line-height: 1.5;
+  --text-base: 1.075rem;
+  --text-base--line-height: 1.55;
+  --text-lg: 1.25rem;
+  --text-lg--line-height: 1.4;
+  --text-xl: 1.45rem;
+  --text-2xl: 1.7rem;
+  --text-3xl: 2.05rem;
+
   /* Motion — docs/design-language.md §Motion */
   --ease-lift: cubic-bezier(0.2, 0.8, 0.3, 1);
   --dur-lift: 110ms;
@@ -234,6 +266,23 @@
   --good: #5c7a4a;
   --warn: #b07a1e;
   --bad: #b04525;
+}
+
+/*
+ * One knob for the whole interface.
+ *
+ * The scale above is written against this, so everything sized in rem — type,
+ * padding, gaps, the rail's own width — grows and shrinks together with the
+ * window. A fixed scale cannot serve both ends of the range this app runs at:
+ * type comfortable at 1920x1080 turned the rail into a third of a 960px window,
+ * and type that fitted the small window was unreadably small on a large monitor.
+ *
+ * Clamped at both ends. Below 15px the labels stop being legible; above 18px
+ * the chrome starts taking width the board wants, and the board is the point.
+ * The board itself is sized by flex, not rem, so it simply takes what is left.
+ */
+html {
+  font-size: clamp(15px, 0.45vw + 10.5px, 18px);
 }
 
 html,

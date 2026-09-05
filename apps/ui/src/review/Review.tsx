@@ -11,6 +11,7 @@ import { opponentById } from '../ladder/opponents'
 import { runAnalysis } from './analyse'
 import { recordPr } from '../game/archive'
 import { Button } from '../chrome/Button'
+import { Notation } from '../chrome/Notation'
 
 /**
  * Match review.
@@ -338,8 +339,15 @@ function BlunderRow({
       <span style={{ color: 'var(--text-dim)', minWidth: '5em' }}>
         {mine ? (fa ? 'شما' : 'you') : opponentById(opponentId).name[lang]}
       </span>
-      <span className="font-mono text-xs" style={{ color: 'var(--text)' }}>
-        {played} → <span style={{ color: 'var(--good)' }}>{best}</span>
+      <span className="flex flex-wrap items-baseline gap-2" style={{ color: 'var(--text)' }}>
+        <Notation text={played} lang={lang} />
+        {/* A word, not another arrow. The plays themselves are full of arrows
+            now, and "X → Y" between two of them reads as one long move rather
+            than as a comparison between what was played and what was best. */}
+        <span className="text-label uppercase tracking-wider" style={{ color: 'var(--text-dim)' }}>
+          {fa ? 'بهتر' : 'best'}
+        </span>
+        <Notation text={best} lang={lang} tone="good" />
       </span>
       <span className="ms-auto text-xs" style={{ color: 'var(--text-dim)' }}>
         {blunder.theme} · {blunder.direction}
