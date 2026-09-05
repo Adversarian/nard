@@ -78,8 +78,11 @@ pnpm dev               # UI dev server on http://localhost:5173
 pnpm test              # vitest, all packages
 pnpm typecheck         # tsc -b across the workspace
 pnpm check             # typecheck + test — run before every commit
-pnpm shots             # capture the visual gallery to .shots/ (see §6)
+pnpm shots             # capture the board scenes to .shots/ (see §6)
+pnpm live              # capture the PLAY view mid-match, with chrome (see §6)
+pnpm screens           # capture the ladder, the outcome and the review
 pnpm motion            # measure animations against the spec (see §6)
+pnpm pointer           # drive the board with REAL mouse events (see §6)
 pnpm playtest          # play complete games through the real UI
 pnpm difftest          # engine move generation vs. gnubg
 pnpm selfplay          # headless AI-vs-AI benchmark
@@ -151,8 +154,27 @@ build UI for a state that is hard to reach by playing** (bear-off race, backgame
 cube at 64, both players on the bar, gammon win). A state with no scene will not
 get looked at, and will therefore be broken.
 
+**Scenes are not enough on their own.** They are board fixtures with no game
+state behind them — no score, no opponent, no turn log — so the entire chrome
+around the board is empty in every one of them and cannot be judged from them at
+all. `pnpm live` plays a few real turns and captures the play view as a player
+sees it; `pnpm screens` covers the ladder, the end-of-game panel and the review.
+Look at those too before claiming a visual change is done.
+
 For interactive playtesting — actually clicking through a game — drive the same
 dev server with the `agent-browser` skill.
+
+### Drive the DOM, not just the store
+
+`pnpm playtest`, `pnpm sound` and the rest talk to `__nard`, which reads the
+zustand store directly. That is fast and deterministic, and it means **none of
+them touch the interface at all** — every one of them passed for weeks against a
+board on which drag-and-drop had never been implemented, because nothing had
+ever pressed a mouse button.
+
+`pnpm pointer` presses, moves and releases a real pointer, and fails on any
+console error. Anything that changes how a player physically manipulates the
+board belongs there.
 
 ## 7. Testing
 

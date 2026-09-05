@@ -101,7 +101,13 @@ class SoundPlayer {
     return i
   }
 
-  play(event: SoundEvent, opts: { gain?: number } = {}): void {
+  /**
+   * `rate` multiplies the pitch. Used to make one sample serve two moments
+   * that belong together — a checker being lifted is the same click as one
+   * being set down, lighter and higher, and a second recorded sample for it
+   * would be a download for no gain.
+   */
+  play(event: SoundEvent, opts: { gain?: number; rate?: number } = {}): void {
     const ctx = this.#ctx
     if (!ctx || this.#volume === 0) return
     // Silent when the window is not focused. Always.
@@ -114,7 +120,7 @@ class SoundPlayer {
     if (!buffer) return
 
     // Jitter, so repeats are never bit-identical.
-    const rate = 1 + (Math.random() - 0.5) * 0.16
+    const rate = (opts.rate ?? 1) * (1 + (Math.random() - 0.5) * 0.16)
     const gain = this.#volume * (opts.gain ?? 1) * (1 + (Math.random() - 0.5) * 0.2)
 
     const src = ctx.createBufferSource()

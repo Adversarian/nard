@@ -13,7 +13,7 @@ import { create } from 'zustand'
  * cannot drift apart — importing the engine's transition functions here is what
  * let that happen once already.
  */
-import { canDouble, legalMoves, type GameState, type Hop } from '@nard/engine'
+import { canDouble, legalMoves, type GameState, type Hop, type PlayerId } from '@nard/engine'
 import {
   availableHops,
   completed,
@@ -26,7 +26,7 @@ import {
 } from './draft'
 import { MatchRecorder, saveMatch, type SavedMatchV1 } from '@nard/analysis'
 import { archiveMatch } from './archive'
-import { decisionMaker } from './view'
+import { decisionMaker, toAbsolutePoint } from './view'
 import { sound } from '../sound/player'
 import {
   loadProgress,
@@ -46,11 +46,43 @@ import {
   type OpponentConfig,
 } from './opponent'
 
+/**
+ * One line of the running turn log.
+ *
+ * Kept in the store rather than derived from the recorder because the recorder
+ * stores DECISIONS, and turning those back into notation means replaying the
+ * match from the seed on every render. The log is a view concern; it is
+ * appended where the transition already happens and thrown away with the match.
+ */
+export interface LogEntry {
+  readonly id: number
+  readonly game: number
+  readonly side: PlayerId
+  readonly dice: readonly [number, number] | null
+  /** Move notation, or the cube action taken. */
+  readonly text: string
+  readonly kind: 'move' | 'no-play' | 'double' | 'take' | 'drop'
+  /**
+   * Points this turn touched, in the SCREEN's absolute frame — the light
+   * player's — not the engine's on-roll-relative one.
+   *
+   * Converted here, at the only place that knows whose turn produced them.
+   * Storing them relative and converting at the board would mean every reader
+   * having to know which side the entry came from, which is exactly the class
+   * of mistake AGENTS.md §5 exists to prevent.
+   */
+  readonly points: readonly number[]
+}
+
 interface GameStore {
   state: GameState
   draft: Draft
   /** Point the player has picked a checker up from, if any. */
   selected: number | null
+  /** Newest first, so the rail can render it without reversing every frame. */
+  log: readonly LogEntry[]
+  /** Which game of the match is being played. 1-based. */
+  gameNo: number
   /**
    * Owns the game state and the commit-reveal dice.
    *
@@ -113,10 +145,29 @@ const fresh = () => {
     state: recorder.state,
     draft: emptyDraft(recorder.state.position),
     selected: null,
+    log: [] as readonly LogEntry[],
+    gameNo: 1,
   }
 }
 
-export const useGame = create<GameStore>((set, get) => ({
+let logSeq = 0
+
+export const useGame = create<GameStore>((set, get) => {
+  /**
+   * Append one line to the turn log.
+   *
+   * Capped rather than unbounded: a long match is hundreds of turns and the
+   * rail only ever shows the tail of it, so keeping the whole thing costs
+   * memory and a growing array copy per move for nothing. The full record
+   * lives in the recorder, which is what Review reads.
+   */
+  const note = (entry: Omit<LogEntry, 'id' | 'game'>) => {
+    logSeq += 1
+    const line: LogEntry = { ...entry, id: logSeq, game: get().gameNo }
+    set({ log: [line, ...get().log].slice(0, 120) })
+  }
+
+  return ({
   ...fresh(),
   opponent: DEFAULT_OPPONENT,
   thinking: false,
@@ -135,6 +186,8 @@ export const useGame = create<GameStore>((set, get) => ({
       state: recorder.state,
       draft: emptyDraft(recorder.state.position),
       selected: null,
+      log: [],
+      gameNo: 1,
       opponent: { rung: opponent.rung, personality: opponent.personality, side: 'dark' },
       opponentId: opponent.id,
       view: 'play',
@@ -215,6 +268,7 @@ export const useGame = create<GameStore>((set, get) => ({
             // store while leaving the recorder behind desyncs the two, and the
             // next roll then throws — which is the recorder doing its job.
             if (get().state === state) {
+              note({ side: state.onRoll, dice: state.dice, text: '', kind: 'no-play', points: [] })
               const passed = get().recorder.passTurn()
               set({ state: passed, draft: emptyDraft(passed.position) })
             }
@@ -248,6 +302,7 @@ export const useGame = create<GameStore>((set, get) => ({
       setTimeout(() => {
         const now = get().state
         if (now === rolled) {
+          note({ side: rolled.onRoll, dice: rolled.dice, text: '', kind: 'no-play', points: [] })
           const passed = get().recorder.passTurn()
           set({ state: passed, draft: emptyDraft(passed.position), selected: null })
         }
@@ -272,6 +327,21 @@ export const useGame = create<GameStore>((set, get) => ({
     const move = completed(legal, next)
     if (move) {
       // Turn is complete — commit it. The engine only ever sees whole turns.
+      note({
+        side: state.onRoll,
+        dice: state.dice,
+        text: move.notation,
+        kind: 'move',
+        // 1..24 only: the bar and the tray are not points to light up.
+        points: [
+          ...new Set(
+            move.hops
+              .flatMap((h) => [h.from, h.to])
+              .filter((pt) => pt >= 1 && pt <= 24)
+              .map((pt) => toAbsolutePoint(pt, state.onRoll)),
+          ),
+        ],
+      })
       const played = get().recorder.playMove(move)
       if (played.phase === 'game-over' || played.phase === 'match-over') {
         sound.play('win', { gain: 0.8 })
@@ -299,18 +369,21 @@ export const useGame = create<GameStore>((set, get) => ({
     const { state, recorder } = get()
     if (!canDouble(state)) return
     sound.play('cube')
+    note({ side: state.onRoll, dice: null, text: String(state.cube.value * 2), kind: 'double', points: [] })
     set({ state: recorder.offerDouble() })
   },
   take() {
     const { state, recorder } = get()
     if (state.phase !== 'cube-offered') return
     sound.play('cube', { gain: 0.7 })
+    note({ side: decisionMaker(state), dice: null, text: String(state.cube.value * 2), kind: 'take', points: [] })
     const next = recorder.takeDouble()
     set({ state: next, draft: emptyDraft(next.position) })
   },
   passCube() {
     const { state, recorder } = get()
     if (state.phase !== 'cube-offered') return
+    note({ side: decisionMaker(state), dice: null, text: '', kind: 'drop', points: [] })
     const next = recorder.passDouble()
     set({ state: next, draft: emptyDraft(next.position) })
   },
@@ -319,13 +392,28 @@ export const useGame = create<GameStore>((set, get) => ({
     const { state, recorder } = get()
     if (state.phase !== 'game-over') return
     const next = recorder.startNextGame()
-    set({ state: next, draft: emptyDraft(next.position), selected: null })
+    set({
+      state: next,
+      draft: emptyDraft(next.position),
+      selected: null,
+      gameNo: get().gameNo + 1,
+    })
   },
-}))
+  })
+})
 
 export interface Affordances {
   readonly movable: readonly number[]
   readonly destinations: readonly number[]
+  /**
+   * The destinations as HOPS, not just point numbers.
+   *
+   * The board needs `hit` to choose between a dot and a ring, and `from` to
+   * work out which die a landing spends — which is the one piece of
+   * information a plain highlight throws away, and the one backgammon needs
+   * that chess does not.
+   */
+  readonly hops: readonly Hop[]
   readonly canUndo: boolean
   readonly anyPlay: boolean
 }
@@ -339,12 +427,14 @@ export function useAffordances(): Affordances {
   // The human plays light. During the opponent's turn there is nothing to click
   // — without this the player could pick up and move the opponent's checkers.
   if (state.phase !== 'to-move' || state.onRoll !== 'light') {
-    return { movable: [], destinations: [], canUndo: false, anyPlay: false }
+    return { movable: [], destinations: [], hops: [], canUndo: false, anyPlay: false }
   }
   const legal = legalMoves(state)
+  const hops = selected === null ? [] : destinationsFrom(legal, draft, selected)
   return {
     movable: movableFrom(legal, draft),
-    destinations: selected === null ? [] : destinationsFrom(legal, draft, selected).map((h) => h.to),
+    destinations: hops.map((h) => h.to),
+    hops,
     canUndo: draft.hops.length > 0,
     anyPlay: availableHops(legal, draft).length > 0,
   }

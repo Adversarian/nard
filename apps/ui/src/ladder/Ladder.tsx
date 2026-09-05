@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { OPPONENTS, isBeaten, type Opponent, type Progress } from './opponents'
 import { digits, STRINGS, type Lang } from '../i18n/strings'
 import { PrHistory } from '../review/PrHistory'
+import { Wordmark } from '../chrome/Wordmark'
 
 const portraits = import.meta.glob<string>('../assets/portraits/*.webp', {
   eager: true,
@@ -19,7 +20,17 @@ const MATCH_LENGTHS = [1, 3, 5, 7, 11] as const
  * A slider asks "how much should I be allowed to win". A person with a name and
  * a way of playing asks "who am I playing tonight", which is the question a
  * player actually has. The rung is never shown as a number — the style line
- * tells you what you are in for, and that is more use than "level 4".
+ * tells you what you are in for, and that is more use than "level 4". Reading
+ * order carries the ladder: Davoud first, Ostad last.
+ *
+ * LAYOUT. Two columns of wide cards, portrait beside the text, rather than
+ * three columns of tall ones with everything centred. The tall version gave
+ * each card a third of its height in dead space — the blurbs are one or two
+ * lines and the win/loss row is empty until you have played someone — and
+ * centred body text in a card that size reads as a list of captions rather than
+ * a line-up of people. Beside the text, the portrait can also be larger in the
+ * same footprint, which is the point: these are the faces you are choosing
+ * between.
  */
 export function Ladder({
   lang,
@@ -37,17 +48,13 @@ export function Ladder({
   return (
     <div
       dir={fa ? 'rtl' : 'ltr'}
-      className="flex min-h-full flex-col items-center justify-center px-6 py-10"
-      style={{ background: 'var(--app-bg)' }}
+      className="room flex min-h-full flex-col items-center justify-center gap-8 px-6 py-10"
     >
-      <h1
-        className={fa ? 'text-2xl' : 'text-sm tracking-[0.4em] uppercase'}
-        style={{ color: 'var(--text-dim)' }}
-      >
-        {s.appName}
+      <h1>
+        <Wordmark size="lg" />
       </h1>
 
-      <div className="mt-10 grid w-full max-w-5xl grid-cols-2 gap-5 sm:grid-cols-3">
+      <div className="grid w-full max-w-4xl grid-cols-1 gap-3 sm:grid-cols-2">
         {OPPONENTS.map((o) => {
           const beaten = isBeaten(o.id, progress)
           const rec = progress.record[o.id]
@@ -55,9 +62,9 @@ export function Ladder({
             <button
               key={o.id}
               onClick={() => onStart(o, length)}
-              className="group flex flex-col items-center rounded-sm p-4 text-center transition-transform hover:-translate-y-0.5"
+              className="group flex items-start gap-4 rounded-[3px] p-3.5 text-start transition-all hover:-translate-y-0.5"
               style={{
-                border: `1px solid ${beaten ? 'var(--inlay)' : 'var(--frame)'}`,
+                border: `1px solid ${beaten ? 'var(--inlay)' : 'var(--app-line)'}`,
                 background: 'var(--app-panel)',
               }}
             >
@@ -67,18 +74,18 @@ export function Ladder({
                 ones — Ostad lost his coat entirely — and the 4:5 frame they
                 were drawn in costs almost nothing to keep.
               */}
-              <div className="relative">
+              <div className="relative shrink-0">
                 <img
                   src={portraitFor(o.id)}
                   alt=""
-                  width={132}
-                  height={165}
-                  className="rounded-sm object-cover"
-                  style={{ border: '1px solid var(--inlay)' }}
+                  width={104}
+                  height={130}
+                  className="rounded-[2px] object-cover transition-opacity group-hover:opacity-100"
+                  style={{ border: '1px solid var(--inlay)', opacity: 0.92 }}
                 />
                 {beaten && (
                   <span
-                    className="absolute -bottom-2 flex h-6 w-6 items-center justify-center rounded-full text-xs"
+                    className="absolute -bottom-2 flex h-5 w-5 items-center justify-center rounded-full text-[0.7rem]"
                     style={{
                       [fa ? 'left' : 'right']: '-0.5rem',
                       background: 'var(--inlay)',
@@ -90,20 +97,24 @@ export function Ladder({
                   </span>
                 )}
               </div>
-              <div className="mt-3 text-base" style={{ color: 'var(--text)' }}>
-                {o.name[lang]}
-              </div>
-              <div className="mt-0.5 text-xs" style={{ color: 'var(--inlay)' }}>
-                {o.style[lang]}
-              </div>
-              <p
-                className="mt-2 text-xs leading-relaxed"
-                style={{ color: 'var(--text-dim)', minHeight: '3.2em' }}
-              >
-                {o.blurb[lang]}
-              </p>
-              <div className="mt-1 font-mono text-xs" style={{ color: 'var(--text-dim)' }}>
-                {rec ? `${digits(rec.won, lang)}–${digits(rec.lost, lang)}` : '\u00A0'}
+
+              <div className="flex min-w-0 flex-1 flex-col self-stretch">
+                <div className="flex items-baseline justify-between gap-2">
+                  <span className="text-lg leading-tight" style={{ color: 'var(--text)' }}>
+                    {o.name[lang]}
+                  </span>
+                  {rec && (
+                    <span className="shrink-0 text-xs tabular-nums" style={{ color: 'var(--text-dim)' }}>
+                      {digits(rec.won, lang)}–{digits(rec.lost, lang)}
+                    </span>
+                  )}
+                </div>
+                <div className="mt-0.5 text-sm" style={{ color: 'var(--inlay)' }}>
+                  {o.style[lang]}
+                </div>
+                <p className="mt-2 text-xs leading-relaxed" style={{ color: 'var(--text-dim)' }}>
+                  {o.blurb[lang]}
+                </p>
               </div>
             </button>
           )
@@ -112,24 +123,36 @@ export function Ladder({
 
       <PrHistory lang={lang} />
 
-      <div className="mt-10 flex items-center gap-3">
-        <span className="text-xs uppercase tracking-wider" style={{ color: 'var(--text-dim)' }}>
+      {/* One segmented control, not five separate buttons — the choice is one
+          value out of a set, and five outlined boxes read as five actions. */}
+      <div className="flex items-center gap-3">
+        <span
+          className="text-[0.65rem] uppercase tracking-[0.18em]"
+          style={{ color: 'var(--text-dim)' }}
+        >
           {fa ? 'طول مسابقه' : 'Match length'}
         </span>
-        {MATCH_LENGTHS.map((n) => (
-          <button
-            key={n}
-            onClick={() => setLength(n)}
-            className="rounded-sm px-3 py-1 text-sm transition-colors"
-            style={{
-              border: `1px solid ${length === n ? 'var(--inlay)' : 'var(--frame)'}`,
-              color: length === n ? 'var(--text)' : 'var(--text-dim)',
-            }}
-          >
-            {digits(n, lang)}
-          </button>
-        ))}
+        <div
+          className="flex overflow-hidden rounded-[3px]"
+          style={{ border: '1px solid var(--app-line)' }}
+        >
+          {MATCH_LENGTHS.map((n) => (
+            <button
+              key={n}
+              onClick={() => setLength(n)}
+              className="px-3.5 py-1.5 text-sm tabular-nums transition-colors"
+              style={
+                length === n
+                  ? { background: 'var(--inlay)', color: 'var(--app-bg)' }
+                  : { color: 'var(--text-dim)' }
+              }
+            >
+              {digits(n, lang)}
+            </button>
+          ))}
+        </div>
       </div>
+      <span className="sr-only">{s.appName}</span>
     </div>
   )
 }

@@ -3,6 +3,7 @@ import { useSettings, type Theme } from './store'
 import { STRINGS, type Lang } from '../i18n/strings'
 import type { HomeSide } from '../board/geometry'
 import { sound } from '../sound/player'
+import { SettingsIcon } from '../chrome/Button'
 
 /**
  * Settings.
@@ -20,10 +21,10 @@ export function Settings() {
     <Popover.Root>
       <Popover.Trigger
         aria-label={fa ? 'تنظیمات' : 'Settings'}
-        className="opacity-60 transition-opacity hover:opacity-100"
+        className="flex items-center p-1 opacity-55 transition-opacity hover:opacity-100"
         style={{ color: 'var(--text-dim)' }}
       >
-        ⚙
+        <SettingsIcon />
       </Popover.Trigger>
       <Popover.Portal>
         <Popover.Positioner sideOffset={10} align="end">
@@ -32,7 +33,7 @@ export function Settings() {
             className="min-w-64 rounded-sm p-4 text-sm shadow-xl outline-none"
             style={{
               background: 'var(--app-panel)',
-              border: '1px solid var(--frame)',
+              border: '1px solid var(--app-line)',
               color: 'var(--text)',
             }}
           >
@@ -116,7 +117,7 @@ function Choice<T extends string>({
           onClick={() => onChange(v)}
           className="rounded-sm px-2.5 py-1 text-xs transition-colors"
           style={{
-            border: `1px solid ${value === v ? 'var(--inlay)' : 'var(--frame)'}`,
+            border: `1px solid ${value === v ? 'var(--inlay)' : 'var(--app-line)'}`,
             color: value === v ? 'var(--text)' : 'var(--text-dim)',
           }}
         >

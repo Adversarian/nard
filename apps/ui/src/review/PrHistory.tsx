@@ -39,7 +39,7 @@ export function PrHistory({ lang }: { lang: Lang }) {
       <div style={{ height: 140 }}>
         <ResponsiveContainer width="100%" height="100%">
           <LineChart data={data} margin={{ top: 4, right: 8, bottom: 0, left: -22 }}>
-            <CartesianGrid stroke="var(--frame)" strokeDasharray="2 4" vertical={false} />
+            <CartesianGrid stroke="var(--app-line)" strokeDasharray="2 4" vertical={false} />
             <XAxis dataKey="i" tick={{ fill: 'var(--text-dim)', fontSize: 11 }} tickLine={false} axisLine={false} />
             <YAxis
               reversed
@@ -51,7 +51,7 @@ export function PrHistory({ lang }: { lang: Lang }) {
             <Tooltip
               contentStyle={{
                 background: 'var(--app-panel)',
-                border: '1px solid var(--frame)',
+                border: '1px solid var(--app-line)',
                 borderRadius: 2,
                 color: 'var(--text)',
                 fontSize: 12,

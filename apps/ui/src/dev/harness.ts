@@ -170,6 +170,8 @@ export interface NardPlayHarness {
   thinking(): boolean
   /** Skip the opponent's deliberate pacing. Automated tests only. */
   fast(on: boolean): void
+  /** The running turn log, newest first — what the rail is showing. */
+  log(): { side: string; kind: string; text: string; points: number[] }[]
   /** Every sound played, for tools/sound.ts. */
   sound(): { t: number; event: string; variant: number; gain: number; rate: number }[]
   /** Registered sample counts per event. */

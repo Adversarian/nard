@@ -10,6 +10,7 @@ import { digits, STRINGS, type Lang } from '../i18n/strings'
 import { opponentById } from '../ladder/opponents'
 import { runAnalysis } from './analyse'
 import { recordPr } from '../game/archive'
+import { Button } from '../chrome/Button'
 
 /**
  * Match review.
@@ -79,46 +80,67 @@ export function Review({
   return (
     <div
       dir={fa ? 'rtl' : 'ltr'}
-      className="min-h-full px-6 py-8"
-      style={{ background: 'var(--app-bg)' }}
+      className="room flex min-h-full flex-col px-6 py-8"
     >
-      <header className="mx-auto flex max-w-4xl items-baseline justify-between">
+            {/*
+        `w-full` is load-bearing. This element is `mx-auto max-w-4xl`, which
+        centres a BLOCK at 896px — but the page root is now `flex flex-col` to
+        centre the analysing card, and a flex item with auto side margins
+        shrinks to its content instead. Without it the Close button sits
+        against the title in the middle of the page.
+      */}
+      <header className="mx-auto flex w-full max-w-4xl items-center justify-between">
         <h1 className="text-lg" style={{ color: 'var(--text)' }}>
           {fa ? 'مرور مسابقه' : 'Match review'}
         </h1>
-        <button
-          onClick={onClose}
-          className="text-sm"
-          style={{ color: 'var(--text-dim)' }}
-        >
-          {fa ? 'بستن' : 'Close'}
-        </button>
+        <Button onClick={onClose}>{fa ? 'بستن' : 'Close'}</Button>
       </header>
 
-      <div className="mx-auto mt-2 max-w-4xl text-xs" style={{ color: 'var(--text-dim)' }}>
+      <div className="mx-auto mt-2 w-full max-w-4xl text-xs" style={{ color: 'var(--text-dim)' }}>
         {fa ? 'حریف' : 'Opponent'}: {opponentById(opponentId).name[lang]} ·{' '}
         {fa ? 'عمق ارزیابی' : 'Evaluated at'} {n(plies)} {fa ? 'لایه' : 'ply'}
       </div>
 
       {!analysis && !error && (
-        <div className="mx-auto mt-16 max-w-md text-center">
-          <div className="text-sm" style={{ color: 'var(--text-dim)' }}>
-            {fa ? 'در حال تحلیل…' : 'Analysing…'} {n(pct)}%
-          </div>
+        /*
+         * Analysis replays every position in the match through the engine, and
+         * on a long match that is a genuine wait. What was here was a hairline
+         * bar in the middle of an otherwise empty black page, which reads as a
+         * screen that has failed rather than one that is working — so this says
+         * what is being done, how far along it is, and how many positions are
+         * left, and it does it in a card the size of the thing it is replacing.
+         */
+        <div className="flex flex-1 items-center justify-center">
           <div
-            className="mt-3 h-0.5 w-full overflow-hidden rounded"
-            style={{ background: 'var(--frame)' }}
+            className="flex w-[22rem] flex-col items-center rounded-[3px] px-8 py-8 text-center"
+            style={{ background: 'var(--app-panel)', border: '1px solid var(--app-line)' }}
           >
+            <div className="text-sm" style={{ color: 'var(--text)' }}>
+              {fa ? 'در حال تحلیل مسابقه' : 'Analysing the match'}
+            </div>
             <div
-              className="h-full transition-[width] duration-200"
-              style={{ width: `${pct}%`, background: 'var(--inlay)' }}
-            />
+              className="mt-5 h-1 w-full overflow-hidden rounded-full"
+              style={{ background: 'var(--app-line)' }}
+            >
+              <div
+                className="h-full transition-[width] duration-200"
+                style={{ width: `${pct}%`, background: 'var(--inlay)' }}
+              />
+            </div>
+            <div className="mt-3 text-xs tabular-nums" style={{ color: 'var(--text-dim)' }}>
+              {n(progress.done)} / {n(progress.total)} · {n(pct)}%
+            </div>
+            <p className="mt-5 text-xs leading-relaxed" style={{ color: 'var(--text-dim)', opacity: 0.8 }}>
+              {fa
+                ? 'هر موقعیت دوباره با موتور ارزیابی می‌شود تا خطای هر حرکت مشخص شود.'
+                : 'Every position is evaluated again, so the cost of each play can be measured.'}
+            </p>
           </div>
         </div>
       )}
 
       {error && (
-        <p className="mx-auto mt-16 max-w-md text-center text-sm" style={{ color: 'var(--bad)' }}>
+        <p className="mx-auto mt-16 w-full max-w-md text-center text-sm" style={{ color: 'var(--bad)' }}>
           {fa ? 'تحلیل ممکن نشد' : 'Analysis unavailable'} — {error}
         </p>
       )}
@@ -150,7 +172,7 @@ function Body({
   )
 
   return (
-    <div className="mx-auto mt-8 max-w-4xl">
+    <div className="mx-auto mt-8 w-full max-w-4xl">
       <section className="grid grid-cols-2 gap-4">
         <PrCard
           label={fa ? 'شما' : 'You'}
@@ -174,7 +196,7 @@ function Body({
             <div
               key={band}
               className="flex-1 rounded-sm px-3 py-2 text-center"
-              style={{ background: 'var(--app-panel)', border: '1px solid var(--frame)' }}
+              style={{ background: 'var(--app-panel)', border: '1px solid var(--app-line)' }}
             >
               <div className="text-lg" style={{ color: bandColour(band) }}>
                 {n(bands[band])}
@@ -259,7 +281,7 @@ function PrCard({
       className="rounded-sm px-5 py-4"
       style={{
         background: 'var(--app-panel)',
-        border: `1px solid ${highlight ? 'var(--inlay)' : 'var(--frame)'}`,
+        border: `1px solid ${highlight ? 'var(--inlay)' : 'var(--app-line)'}`,
       }}
     >
       <div className="text-xs uppercase tracking-wider" style={{ color: 'var(--text-dim)' }}>
@@ -306,7 +328,7 @@ function BlunderRow({
       className="flex items-baseline gap-3 rounded-sm px-3 py-2 text-sm"
       style={{
         background: 'var(--app-panel)',
-        border: '1px solid var(--frame)',
+        border: '1px solid var(--app-line)',
         opacity: mine ? 1 : 0.55,
       }}
     >

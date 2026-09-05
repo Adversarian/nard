@@ -38,6 +38,18 @@ export interface Strings {
   readonly unmute: string
   readonly gammon: string
   readonly backgammon: string
+  readonly yourTurn: string
+  readonly theirTurn: string
+  readonly cube: string
+  readonly game: string
+  readonly noMovesYet: string
+  readonly offeredYou: (v: string) => string
+  readonly level: string
+  readonly youLeadBy: (v: string) => string
+  readonly theyLeadBy: (v: string) => string
+  readonly tookIt: string
+  readonly passed: string
+  readonly chooseOpponent: string
 }
 
 const FA_DIGITS = ['۰', '۱', '۲', '۳', '۴', '۵', '۶', '۷', '۸', '۹']
@@ -47,6 +59,26 @@ export function digits(n: number, lang: Lang): string {
   const s = String(n)
   return lang === 'fa' ? s.replace(/\d/g, (d) => FA_DIGITS[Number(d)]!) : s
 }
+
+/**
+ * Move notation for display.
+ *
+ * The digits become Persian ones in the Persian interface — a player reading
+ * ۱۳/۱۰ should not have to switch numeral systems halfway down a column whose
+ * dice are already in Persian. `bar` stays Latin: it is a technical token of
+ * standard backgammon notation, the same way chess keeps its file letters, and
+ * mixing an Arabic-script word into a forced-LTR run is a bidi problem for no
+ * gain.
+ *
+ * The caller must render the result inside `dir="ltr"`. Notation is inherently
+ * left-to-right — it reads from-point then to-point — and in an RTL paragraph
+ * the hit marker migrates off the end of the play it belongs to.
+ */
+export function notation(text: string, lang: Lang): string {
+  return lang === 'fa' ? digits2(text) : text
+}
+
+const digits2 = (s: string) => s.replace(/\d/g, (d) => FA_DIGITS[Number(d)]!)
 
 const en: Strings = {
   appName: 'nard',
@@ -73,6 +105,18 @@ const en: Strings = {
   unmute: 'Unmute',
   gammon: 'gammon',
   backgammon: 'backgammon',
+  yourTurn: 'your move',
+  theirTurn: 'on roll',
+  cube: 'cube',
+  game: 'Game',
+  noMovesYet: 'No moves yet.',
+  offeredYou: (v) => `Doubled to ${v}.`,
+  level: 'level',
+  youLeadBy: (v) => `you +${v}`,
+  theyLeadBy: (v) => `them +${v}`,
+  tookIt: 'Took',
+  passed: 'Passed',
+  chooseOpponent: 'Choose opponent',
 }
 
 const fa: Strings = {
@@ -100,6 +144,18 @@ const fa: Strings = {
   // مارس is what the game is actually called at an Iranian board, not a gloss.
   gammon: 'مارس',
   backgammon: 'مارس ترکی',
+  yourTurn: 'نوبت شما',
+  theirTurn: 'نوبت حریف',
+  cube: 'کوب',
+  game: 'بازی',
+  noMovesYet: 'هنوز حرکتی نشده.',
+  offeredYou: (v) => `دوبل به ${v}.`,
+  level: 'برابر',
+  youLeadBy: (v) => `شما ${v}+`,
+  theyLeadBy: (v) => `حریف ${v}+`,
+  tookIt: 'قبول کرد',
+  passed: 'پاس داد',
+  chooseOpponent: 'انتخاب حریف',
 }
 
 export const STRINGS: Readonly<Record<Lang, Strings>> = { en, fa }

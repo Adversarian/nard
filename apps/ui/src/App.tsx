@@ -1,12 +1,13 @@
 import { useEffect, useMemo, useState } from 'react'
 import { canDouble, legalMoves, pipCount, positionKey } from '@nard/engine'
 import { Board, Cube, Die, RolledDie, FIELD_X, FIELD_Y, GEO } from './board'
-import { AnimatedCheckers } from './board/AnimatedCheckers'
-import { Interaction } from './board/Interaction'
-import { entitiesFrom, type CheckerEntity } from './board/entities'
+import { AnimatedCheckers, Carried } from './board/AnimatedCheckers'
+import { Interaction, LastMove } from './board/Interaction'
+import { entitiesFrom, topEntityAt, type CheckerEntity } from './board/entities'
+import { useDrag } from './board/useDrag'
 import { installHarness, installPlayHarness } from './dev/harness'
 import { SCENES, sceneById, type Scene } from './dev/scenes'
-import { availableHops } from './game/draft'
+import { availableHops, destinationsFrom } from './game/draft'
 import { useAffordances, useGame } from './game/store'
 import { useKeyboard } from './game/useKeyboard'
 import type { OpponentConfig } from './game/opponent'
@@ -14,6 +15,8 @@ import { Outcome } from './game/Outcome'
 import { Review } from './review/Review'
 import { findMatch } from './game/archive'
 import { Ladder } from './ladder/Ladder'
+import { Rail } from './game/Rail'
+import { Wordmark } from './chrome/Wordmark'
 import { opponentById } from './ladder/opponents'
 import { decisionMaker, reconcile, toAbsolute } from './game/view'
 import { digits, STRINGS } from './i18n/strings'
@@ -120,10 +123,37 @@ function PlayView() {
     return c
   }, [abs])
 
-  const hits = useMemo(
-    () => aff.destinations.filter((p) => p > 0 && (abs.pts[p] ?? 0) === -1),
-    [aff.destinations, abs],
-  )
+  /**
+   * Picking a checker up.
+   *
+   * `legalFor` is asked afresh on every pointer move rather than closing over
+   * `aff.hops`, because the hops on offer depend on what is already drafted
+   * this turn — and a drag begun before the draft changed would otherwise keep
+   * offering landings that are no longer legal.
+   */
+  const { drag, dragging, start } = useDrag({
+    legalFor: (from, to) =>
+      from === selected
+        ? aff.destinations.includes(to)
+        : destinationsFrom(legalMoves(state), draft, from).some((h) => h.to === to),
+    onPick: (from) => store.select(from),
+    onDrop: (_from, to) => store.moveTo(to),
+  })
+
+  const carried = drag && dragging ? topEntityAt(entities, drag.from) : null
+
+  /*
+   * The most recent MOVE, marked only when it was the opponent's.
+   *
+   * Marking your own would light up the board every time you played, which
+   * tells you something you already know. And it has to skip past cube actions
+   * and turns with no legal play rather than just reading the newest entry:
+   * an opponent who moves and then doubles has still moved, and reading only
+   * the head of the log meant the mark vanished at exactly the moment the
+   * player most wants to see what changed.
+   */
+  const lastMove = store.log.find((e) => e.kind === 'move')
+  const lastPoints = lastMove && lastMove.side !== 'light' ? lastMove.points : []
 
   const pips = pipCount(abs)
   const rightHalfCx = FIELD_X + 6 * GEO.u + GEO.barW + 3 * GEO.u
@@ -156,37 +186,26 @@ function PlayView() {
   const facingDouble = state.phase === 'cube-offered' && isHumanTurn
 
   return (
-    <div
-      dir={lang === 'fa' ? 'rtl' : 'ltr'}
-      className="flex h-full flex-col"
-      style={{ background: 'var(--app-bg)' }}
-    >
-      <header className="flex items-center justify-between px-6 py-3 text-sm">
+    <div dir={lang === 'fa' ? 'rtl' : 'ltr'} className="room flex h-full flex-col">
+      {/*
+        Two items, so `justify-between` is honest here. It was three before —
+        app name, opponent, score — and the middle one is never actually
+        centred under that rule; it lands wherever the outer two leave it, and
+        drifted every time the score changed width. Everything that used to sit
+        in the middle now lives in the rail, where it has room.
+      */}
+      <header className="flex shrink-0 items-center justify-between px-6 py-3">
         <button
           onClick={() => store.toLadder()}
-          className={`transition-opacity hover:opacity-100 ${
-            lang === 'fa' ? 'text-base' : 'tracking-[0.3em] uppercase'
-          }`}
-          style={{ color: 'var(--text-dim)' }}
-          title={lang === 'fa' ? 'انتخاب حریف' : 'Choose opponent'}
+          className="py-1 transition-opacity hover:opacity-75"
+          title={s.chooseOpponent}
         >
-          {s.appName}
+          <Wordmark />
         </button>
-        <span className="text-sm" style={{ color: 'var(--inlay)' }}>
-          {opponentById(store.opponentId).name[lang]}
-        </span>
-        <span className="flex items-center gap-4" style={{ color: 'var(--text-dim)' }}>
-          {degraded && <span title={s.reducedEngineHint}>⚠ {s.reducedEngine}</span>}
-          <span>
-            {state.match.length > 0 ? s.matchTo(state.match.length) : s.moneyGame} ·{' '}
-            {n(state.match.score.light)}–{n(state.match.score.dark)}
-            {state.match.crawford ? ` · ${s.crawford}` : ''}
-          </span>
-          <Settings />
-        </span>
+        <Settings />
       </header>
 
-      <main className="relative flex flex-1 items-center justify-center px-6">
+      <main className="flex min-h-0 flex-1 gap-5 px-5 pb-5">
         {(state.phase === 'game-over' || state.phase === 'match-over') && (
           <Outcome
             state={state}
@@ -197,86 +216,65 @@ function PlayView() {
             {...(store.lastMatchId ? { onReview: () => store.toReview() } : {})}
           />
         )}
-        <Board
-          home={home}
-          {...(canRoll ? { onFieldClick: () => store.roll() } : {})}
-        >
-          <AnimatedCheckers entities={entities} />
-          {state.dice && (
-            <>
-              {diceFaces.map((v, i) => (
+
+        {/* `min-w-0` so the board's column can shrink; a flex child defaults to
+            its content width and would otherwise push the rail off-screen. */}
+        <div className="flex min-h-0 min-w-0 flex-1 items-center justify-center">
+          <Board home={home} {...(canRoll ? { onFieldClick: () => store.roll() } : {})}>
+            {/* Under the checkers, so a marked point reads as the board being
+                marked rather than the checkers being tinted. */}
+            <LastMove points={lastPoints} />
+            <AnimatedCheckers entities={entities} ghost={carried?.id ?? null} />
+            {state.dice &&
+              diceFaces.map((v, i) => (
                 <RolledDie
                   key={i}
-                  x={rightHalfCx + (i - (diceFaces.length - 1) / 2) * 0.95}
+                  x={rightHalfCx + (i - (diceFaces.length - 1) / 2) * 0.86}
                   y={diceY}
                   value={v}
-                  size={0.82}
+                  size={0.7}
+                  index={i}
                   dimmed={i < draft.hops.length}
                 />
               ))}
-            </>
-          )}
-          <Cube x={FIELD_X + 6 * GEO.u + GEO.barW / 2} y={cubeY} value={state.cube.value} />
-          <Interaction
-            movable={aff.movable}
-            destinations={aff.destinations}
-            selected={selected}
-            hits={hits}
-            counts={counts}
-            onPick={(p) => store.select(aff.movable.includes(p) ? p : null)}
-            onDrop={(p) => store.moveTo(p)}
-          />
-        </Board>
-      </main>
-
-      <footer className="flex items-center justify-center gap-8 px-6 py-4 text-sm">
-        <Pip label={s.opponent} value={n(pips.opponent)} />
-        <div className="flex items-center gap-3">
-          {canRoll && <Action onClick={() => store.roll()}>{s.roll}</Action>}
-          {thinking && (
-            <span className="animate-pulse" style={{ color: 'var(--text-dim)' }}>
-              {s.thinking}
-            </span>
-          )}
-          {aff.canUndo && <Action onClick={() => store.undo()}>{s.undo}</Action>}
-          {state.phase === 'to-move' && !aff.anyPlay && !aff.canUndo && (
-            <span style={{ color: 'var(--text-dim)' }}>{s.noPlay}</span>
-          )}
-          {facingDouble && (
-            <>
-              <Action onClick={() => store.take()}>{s.take(state.cube.value * 2)}</Action>
-              <Action onClick={() => store.passCube()}>{s.pass}</Action>
-            </>
-          )}
-          {canDoubleNow && <Action onClick={() => store.double()}>{s.double}</Action>}
-
+            <Cube x={FIELD_X + 6 * GEO.u + GEO.barW / 2} y={cubeY} value={state.cube.value} />
+            <Interaction
+              movable={aff.movable}
+              hops={aff.hops}
+              selected={selected}
+              counts={counts}
+              dragOver={drag?.over ?? null}
+              onDrop={(p) => store.moveTo(p)}
+              onStartDrag={start}
+            />
+            {/* Last, so the carried checker is above the affordances it is
+                being dragged onto. */}
+            {carried && drag && <Carried side={carried.side} x={drag.x} y={drag.y} />}
+          </Board>
         </div>
-        <Pip label={s.you} value={n(pips.player)} />
-      </footer>
+
+        <Rail
+          lang={lang}
+          state={state}
+          log={store.log}
+          gameNo={store.gameNo}
+          opponent={opponentById(store.opponentId)}
+          thinking={thinking}
+          degraded={degraded}
+          pips={pips}
+          aff={aff}
+          isHumanTurn={isHumanTurn}
+          canRoll={canRoll}
+          canDoubleNow={canDoubleNow}
+          facingDouble={facingDouble}
+          onRoll={() => store.roll()}
+          onUndo={() => store.undo()}
+          onDouble={() => store.double()}
+          onTake={() => store.take()}
+          onPass={() => store.passCube()}
+        />
+      </main>
     </div>
-  )
-}
-
-function Action({ children, onClick }: { children: React.ReactNode; onClick: () => void }) {
-  return (
-    <button
-      onClick={onClick}
-      className="rounded-sm px-3 py-1.5 text-sm transition-colors"
-      style={{ border: '1px solid var(--inlay)', color: 'var(--text)' }}
-    >
-      {children}
-    </button>
-  )
-}
-
-function Pip({ label, value }: { label: string; value: string }) {
-  return (
-    <span className="flex items-baseline gap-2" style={{ color: 'var(--text-dim)' }}>
-      <span className="text-xs uppercase tracking-wider opacity-70">{label}</span>
-      <span className="text-base" style={{ color: 'var(--text)' }}>
-        {value}
-      </span>
-    </span>
   )
 }
 
@@ -319,14 +317,12 @@ function BoardWithPieces({ scene }: { scene: Scene }) {
 function SceneView({ scene }: { scene: Scene }) {
   const fa = scene.lang === 'fa'
   return (
-    <div dir={fa ? 'rtl' : 'ltr'} className="flex h-full flex-col" style={{ background: 'var(--app-bg)' }}>
+    <div dir={fa ? 'rtl' : 'ltr'} className="room flex h-full flex-col">
       <header className="flex items-center justify-between px-6 py-3 text-sm">
-        <span className="tracking-[0.3em] uppercase" style={{ color: 'var(--text-dim)' }}>
-          {fa ? 'نرد' : 'nard'}
-        </span>
+        <Wordmark />
         <span style={{ color: 'var(--text-dim)' }}>{fa ? 'مسابقه تا ۷ امتیاز' : 'Match to 7'} · 2–1</span>
       </header>
-      <main className="flex flex-1 items-center justify-center px-6">
+      <main className="flex min-h-0 flex-1 items-center justify-center px-6">
         <BoardWithPieces scene={scene} />
       </main>
       <footer className="flex justify-center px-6 py-4 font-mono text-xs" style={{ color: 'var(--text-dim)' }}>
@@ -338,7 +334,7 @@ function SceneView({ scene }: { scene: Scene }) {
 
 function Gallery({ theme }: { theme: string }) {
   return (
-    <div className="min-h-full p-8" style={{ background: 'var(--app-bg)' }}>
+    <div className="room min-h-full p-8">
       <h1 className="mb-6 text-sm tracking-[0.3em] uppercase" style={{ color: 'var(--text-dim)' }}>
         nard · gallery · {theme}
       </h1>
@@ -419,6 +415,13 @@ function useDevHarness(): void {
         }),
       thinking: () => useGame.getState().thinking || useGame.getState().busy,
       fast: (on) => useGame.getState().setFast(on),
+      log: () =>
+        useGame.getState().log.map((e) => ({
+          side: e.side,
+          kind: e.kind,
+          text: e.text,
+          points: [...e.points],
+        })),
       start: (opponentId = 'mehrdad', matchLength = 7) =>
         useGame.getState().startMatch(opponentById(opponentId), matchLength),
       sound: () => sound.log.map((r) => ({ ...r })),

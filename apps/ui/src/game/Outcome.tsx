@@ -2,6 +2,15 @@ import { motion } from 'motion/react'
 import type { GameResult, GameState } from '@nard/engine'
 import { digits, STRINGS, type Lang } from '../i18n/strings'
 import { opponentById } from '../ladder/opponents'
+import { Button } from '../chrome/Button'
+
+const portraits = import.meta.glob<string>('../assets/portraits/*.webp', {
+  eager: true,
+  query: '?url',
+  import: 'default',
+})
+const portraitFor = (id: string) =>
+  Object.entries(portraits).find(([p]) => p.includes(`/${id}.`))?.[1]
 
 /**
  * The end of a game, and the end of a match.
@@ -52,66 +61,85 @@ export function Outcome({
         animate={{ y: 0, opacity: 1 }}
         transition={{ type: 'spring', stiffness: 320, damping: 30, delay: 0.05 }}
         dir={fa ? 'rtl' : 'ltr'}
-        className="flex min-w-80 flex-col items-center rounded-sm px-10 py-8 text-center"
+        className="flex w-[24rem] flex-col items-center rounded-[3px] px-8 py-7 text-center"
         style={{ background: 'var(--app-panel)', border: '1px solid var(--inlay)' }}
       >
-        <div
-          className="text-xs uppercase tracking-[0.25em]"
-          style={{ color: 'var(--text-dim)' }}
-        >
+        <div className="text-[0.65rem] uppercase tracking-[0.25em]" style={{ color: 'var(--text-dim)' }}>
           {matchOver ? s.matchOver : fa ? 'پایان بازی' : 'Game over'}
         </div>
 
-        <div className="mt-3 text-2xl" style={{ color: 'var(--text)' }}>
+        {/* Who it was against. The result of a match is not a number on its
+            own — it is a number against a person, and the ladder is built out
+            of people for exactly that reason. */}
+        <img
+          src={portraitFor(opponent.id)}
+          alt=""
+          width={72}
+          height={90}
+          className="mt-4 rounded-[2px] object-cover"
+          style={{ border: '1px solid var(--inlay)', opacity: won ? 0.7 : 1 }}
+        />
+
+        <div className="mt-4 text-2xl" style={{ color: won ? 'var(--inlay)' : 'var(--text)' }}>
           {won ? s.youWin : s.theyWin}
         </div>
 
-        <div className="mt-1 text-sm" style={{ color: 'var(--inlay)' }}>
+        <div className="mt-1 text-sm" style={{ color: 'var(--text-dim)' }}>
           {describe(result, lang)}
         </div>
 
         {state.match.length > 0 && (
-          <div className="mt-5 font-mono text-lg" style={{ color: 'var(--text)' }}>
-            {digits(state.match.score.light, lang)} – {digits(state.match.score.dark, lang)}
+          <div className="mt-6 grid w-full grid-cols-2 gap-6">
+            <Side
+              label={fa ? 'شما' : 'You'}
+              value={digits(state.match.score.light, lang)}
+              lead={state.match.score.light > state.match.score.dark}
+            />
+            <Side
+              label={opponent.name[lang]}
+              value={digits(state.match.score.dark, lang)}
+              lead={state.match.score.dark > state.match.score.light}
+            />
           </div>
         )}
-        <div className="mt-1 text-xs" style={{ color: 'var(--text-dim)' }}>
-          {fa ? 'شما' : 'You'} · {opponent.name[lang]}
-        </div>
 
-        <div className="mt-7 flex gap-3">
+        <div className="mt-8 flex w-full gap-2.5">
           {onReview && (
-            <button
-              onClick={onReview}
-              autoFocus
-              className="rounded-sm px-4 py-2 text-sm"
-              style={{ border: '1px solid var(--inlay)', color: 'var(--text)' }}
-            >
+            <Button primary grow autoFocus onClick={onReview}>
               {fa ? 'مرور' : 'Review'}
-            </button>
+            </Button>
           )}
           {!matchOver && (
-            <button
-              onClick={onNext}
-              className="rounded-sm px-4 py-2 text-sm"
-              style={{ border: '1px solid var(--inlay)', color: 'var(--text)' }}
-            >
+            <Button primary={!onReview} grow onClick={onNext}>
               {s.nextGame}
-            </button>
+            </Button>
           )}
-          <button
-            onClick={onLadder}
-            className="rounded-sm px-4 py-2 text-sm"
-            style={{
-              border: `1px solid ${matchOver ? 'var(--inlay)' : 'var(--frame)'}`,
-              color: matchOver ? 'var(--text)' : 'var(--text-dim)',
-            }}
-          >
+          <Button grow onClick={onLadder}>
             {fa ? 'حریف دیگر' : 'Another opponent'}
-          </button>
+          </Button>
         </div>
       </motion.div>
     </motion.div>
+  )
+}
+
+/** One side of the match score. The leader's number is the bright one. */
+function Side({ label, value, lead }: { label: string; value: string; lead: boolean }) {
+  return (
+    <div>
+      <div
+        className="text-3xl leading-none font-semibold tabular-nums"
+        style={{ color: lead ? 'var(--inlay)' : 'var(--text)' }}
+      >
+        {value}
+      </div>
+      <div
+        className="mt-1.5 truncate text-[0.65rem] uppercase tracking-[0.14em]"
+        style={{ color: 'var(--text-dim)' }}
+      >
+        {label}
+      </div>
+    </div>
   )
 }
 
